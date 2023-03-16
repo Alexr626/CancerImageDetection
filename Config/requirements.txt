@@ -1,0 +1,5 @@
+MedPy==0.4.0
+pylidc==0.2.3
+tqdm==4.65.0
+numpy==1.23.5
+pandas==1.5.3
