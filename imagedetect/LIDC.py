@@ -17,7 +17,7 @@ def extract_nodules():
 
     nodules = []
     for _, row in df.iterrows():
-        if row['eq. diam.'] > 30: continue
+        # if row['eq. diam.'] > 30: continue
 
         case = row['case']
 
@@ -38,9 +38,14 @@ def extract_nodules():
 
         total_nodules += 1
         malignancy = np.median([ann.malignancy for ann in annotations])
-        malignancy_th = int(malignancy > 3)
-
-        if malignancy == 3: continue
+        
+        # 0 - benign, 1 - ambiguous, 2 - malignant
+        if malignancy < 3:
+            malignancy_th = 0
+        elif malignancy == 3:
+            malignancy_th = 1
+        else:
+            malignancy_th = 2
 
         annotations = [annt for annt in annotations if annt.bbox_dimensions(1).max() <= 31]
 
@@ -51,7 +56,7 @@ def extract_nodules():
         view2d = vol
         view2d = hu_normalize(view2d, slope, intercept)
         #view2d *= seg
-        nodules.append((view2d, malignancy, row['eq. diam.'], malignancy_th, ann.centroid()))
+        nodules.append((case, view2d, malignancy, row['eq. diam.'], malignancy_th, ann.centroid()))
 
     return nodules
 

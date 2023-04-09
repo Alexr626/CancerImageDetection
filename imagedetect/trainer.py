@@ -40,7 +40,7 @@ class Trainer:
             "batch_size": batch_size,
             "n_epochs": n_epochs,
             "model": model,
-            "optimizer": optimizer,
+            "optimizer": optimizer
 
         })
 
@@ -63,6 +63,20 @@ class Trainer:
 
         valid_acc = self.validate()
         self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
+        def summery(data):
+            n = 0.0
+            s_dist = 0
+            for dist in data:
+                s_dist += T.sum(dist)
+                n += len(dist)
+
+            return s_dist.float() / n
+        wandb.log({"loss": np.sum(all_losses) / len(all_losses), 
+                   "epoch": epoch,
+                    "train_acc": summery(all_acc),
+                    "valid_acc": summery(valid_acc),
+                    "duration": time.time() - s_time
+                   })
 
     def report(self, all_losses, all_acc, valid_acc, epoch, duration):
         n_train = len(all_losses)
