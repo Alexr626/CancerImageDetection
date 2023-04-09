@@ -42,21 +42,26 @@ def resize(im):
 
 
 def generate_dataset(dir):
+    # Load in csv created in LIDC.py
     df = pd.read_csv(dir+'/labels.csv')
-    df['testing'] = 1
+
+    # Get voxel data
     voxels = np.zeros((len(df),48,48,48), dtype=np.uint8)
+    # Augmenter for training data
     augmenter = Augmenter(hflip=True, rotate=True, blurring=True)
     augmenter2 = Augmenter(hflip=False, rotate=False, blurring=False)
+
+
     for i, row in df.iterrows():
         voxels[int(row.id)] = np.load('{0}/{1:.0f}.npy'.format(dir,row.id))
 
-    for i in range(10):
-        folder = '{0}/{1}/'.format(dir,i)
+    for i in range(1):
+        folder = '{0}/'.format(dir)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        tests = df[df.fold == i].copy()
-        trains = df[df.fold != i].copy()
-        trains.testing = 0
+        tests = df[df.testing == 1].copy()
+        trains = df[df.testing == 0].copy()
+        # trains.testing = 0
         new_df = pd.concat([tests, trains])
         new_df.to_csv(folder+'/labels.csv', index=False)
 
@@ -71,6 +76,7 @@ def generate_dataset(dir):
             for e,im in enumerate(augmenter.augment(voxel)):
                 im2 = resize(im)
                 im2.save('{0}{1:.0f}.{2}.png'.format(folder, row.id, e))
+        
 
 def map_malignancy_th(malignancy):
     if malignancy < 3:
