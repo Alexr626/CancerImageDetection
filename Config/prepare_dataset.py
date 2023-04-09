@@ -10,7 +10,6 @@ import pylidc as pl
 from tqdm import tqdm
 from statistics import median_high, median, median_grouped, mode, mean
 from math import e, floor
-from sklearn.model_selection import train_test_split
 import random
 
 from utils import is_dir_path,segment_lung
@@ -40,7 +39,6 @@ padding = parser.getint('pylidc','padding_size')
 
 #Train-test split
 SPLIT_NUMBER = 2 / 3
-
 
 
 class MakeDataSet:
@@ -76,7 +74,7 @@ class MakeDataSet:
                                                               'Internal structure_median_high','Calcification_median_high',
                                                               'Subtlety_median_high', 'Margin_median_high', 'Sphericity_median_high',
                                                               'Lobulation_median_high', 'Spiculation_median_high',
-                                                              'Texture_median_high', 'Malignancy_median_high'])
+                                                              'Texture_median_high', 'Malignancy_median_high', 'Is_cancer'])
 
         self.meta_annotation_train = empty_annotatation_df
         self.meta_annotation_test = empty_annotatation_df
@@ -85,12 +83,37 @@ class MakeDataSet:
                                                           'Calcification', 'Subtlety', 'Margin', 'Sphericity',
                                                           'Lobulation', 'Spiculation', 'Texture'])
 
+        self.IDRI_list_train, self.IDRI_list_test = self.get_train_test_split(size = len(self.IDRI_list))
+
+
+    def create_response(self, malignancy_df, nrow):
+        malignancy_entropy = malignancy_df["Malignancy_entropy"][0]
+        malignancy_mean = malignancy_df["Malignancy_mean"][0]
+        if malignancy_entropy >= 1.5:
+            is_cancer = "No_consensus"
+        elif malignancy_mean >= 3.5:
+            is_cancer = "True"
+        elif malignancy_mean <= 2.5:
+            is_cancer = "False"
+        else:
+            is_cancer = "Ambiguous"
+
+        is_cancer_column = pd.Series(data=[is_cancer for _ in range(nrow)])
+
+        return is_cancer_column
+
+
     def get_train_test_split(self, size, split = SPLIT_NUMBER):
+        print("Number of patients: " + str(size))
         random.seed(42)
         indeces = list(range(0,size - 1))
         train_indeces = random.sample(indeces, floor(split * size))
         test_indeces = [index for index in indeces if index not in train_indeces]
-        return train_indeces, test_indeces
+        IDRI_list_train = [self.IDRI_list[i] for i in train_indeces]
+        IDRI_list_test = [self.IDRI_list[i] for i in test_indeces]
+        print("Training patient ids: " + str(IDRI_list_train))
+
+        return IDRI_list_train, IDRI_list_test
 
     def calculate_variable_mode(self, values, nrow):
         mode_val = mode(values)
@@ -177,6 +200,9 @@ class MakeDataSet:
                 summary_statistics_annotation_df[median_high_label] = median_high_column
 
         meta_annotation_df = pd.concat((tmp_annotations_df, summary_statistics_annotation_df), axis=1)
+        malignancy_summary_df = summary_statistics_annotation_df[["Malignancy_mean", "Malignancy_entropy"]]
+        meta_annotation_df["Is_cancer"] = self.create_response(malignancy_summary_df, nrow)
+
         return meta_annotation_df
 
     def save_meta(self, meta_df, is_nodule, is_train):
@@ -208,15 +234,6 @@ class MakeDataSet:
         MASK_DIR = Path(self.mask_path)
         CLEAN_DIR_IMAGE = Path(self.clean_path_img)
         CLEAN_DIR_MASK = Path(self.clean_path_mask)
-
-        nPatients = len(self.IDRI_list)
-        print("Number of patients: " + str(nPatients))
-        train_indeces, test_indeces = self.get_train_test_split(nPatients)
-
-        IDRI_list_train = [self.IDRI_list[i] for i in train_indeces]
-        IDRI_list_test = [self.IDRI_list[i] for i in test_indeces]
-
-        print("Training patient ids: " + str(IDRI_list_train))
 
         for patient in tqdm(self.IDRI_list):
             pid = patient #LIDC-IDRI-0001~
@@ -256,7 +273,7 @@ class MakeDataSet:
 
                     if not tmp_annotations_df.empty:
                         meta_annotation_df = self.calculate_summary_statistics(tmp_annotations_df)
-                        if patient in IDRI_list_train:
+                        if patient in self.IDRI_list_train:
                             self.save_meta(meta_annotation_df, is_nodule=False, is_train=True)
                         else:
                             self.save_meta(meta_annotation_df, is_nodule=False, is_train=False)
