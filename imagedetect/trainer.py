@@ -4,7 +4,7 @@ import numpy as np
 import time
 from sklearn import metrics
 from os import path
-
+import wandb
 
 class Trainer:
     def __init__(self, training_set,
@@ -36,6 +36,13 @@ class Trainer:
         self.n_epochs = n_epochs
         self.name = name
         self.log = ''
+        wandb.init(project='lidc-idri', config={
+            "batch_size": batch_size,
+            "n_epochs": n_epochs,
+            "model": model,
+            "optimizer": optimizer,
+
+        })
 
 
     def train_epoch(self, epoch):
