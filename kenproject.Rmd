@@ -1,0 +1,138 @@
+---
+title: "STAT 447 project"
+author: "Ken Mawer"
+date: "2023-04-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(maptree)
+library(rpart.plot)
+library(randomForest)
+library(caret)
+```
+
+```{r get_data, include = FALSE}
+# Get datasets
+train <- read_csv("Data/Meta/meta_annotation_info_train.csv")
+holdo <- read_csv("Data/Meta/meta_annotation_info_test.csv")
+
+# Remove response variables and other irrelevant variables
+process <- function(dataset) {
+  dplyr::select(dataset,-Malignancy,-Malignancy_median_high,-Malignancy_median,-Malignancy_mean,-Malignancy_mode,-Malignancy_entropy,-Patient_id, -starts_with("Internal"),-Calcification_entropy,-Calcification_mean,-Calcification_median,-Calcification_median_high) %>%
+    mutate(Is_cancer = as_factor(Is_cancer),Calcification = as_factor(Calcification),
+           Calcification_mode = as_factor(Calcification_mode))
+}
+
+t <- process(train)
+h <- process(holdo)
+# Fixes missing factor levels
+# Refer to https://stackoverflow.com/questions/24829674/r-random-forest-error-type-of-predictors-in-new-data-do-not-match
+h <- rbind(t[1,],h)[-1,]
+```
+
+```{r analysis, include=FALSE}
+# Exploratory data analysis
+summary(train)
+```
+
+```{r randomforest, echo=FALSE}
+set.seed(123)
+tr <- tree::tree(Is_cancer~.,data=t)
+rpart.plot(rpart(Is_cancer~.,data=t))
+
+my_rf <- randomForest(Is_cancer~.,data=t)
+my_cm <- my_rf$confusion
+my_cv <- rfcv(dplyr::select(t,-Is_cancer),t$Is_cancer)
+# set n.var to 12 to reduce overfitting
+
+tuneRF(dplyr::select(t,-Is_cancer),t$Is_cancer)
+
+preds <- predict(my_rf,newdata=h)
+
+confusionMatrix(predict(randomForest(Is_cancer~.,data=t),h),h$Is_cancer)
+confusionMatrix(predict(randomForest(Is_cancer~.,data=t,mtry = 12),h), h$Is_cancer)
+```
+
+```{r, calc_error}
+plot(my_cv$n.var, my_cv$error.cv)
+
+# Number of training set misclassifications
+t_error_ct <- function(rf) {
+  cm <- rf$confusion
+  sum(cm[1:4,1:4]) - sum(diag(cm))
+}
+
+# Number of holdout set misclassifications
+h_error_ct <- function(rf) {
+  pr <- predict(rf,h) == h$Is_cancer
+  length(pr[!pr])
+}
+
+
+mt <- c(40,20,10,5,2,1)
+
+te <- c()
+he <- c() 
+for (i in mt) {
+  rf <- randomForest(Is_cancer~.,data=t,mtry = i)
+  tr_error <- t_error_ct(rf)
+  ho_error <- h_error_ct(rf)
+  te <- c(te,tr_error)
+  he <- c(he,ho_error)
+}
+
+info <- tibble(mtry = mt,
+               training_misclass = te,
+               holdout_misclass = he,
+               total_misclass = te + he) %>%
+  pivot_longer(-mtry)
+
+ggplot(info,aes(x=mtry,y=value,group=name,color=name)) +
+  geom_line() +
+  geom_point()
+```
+
+```{r interval_score,echo=FALSE}
+# From Harry Joe's website
+CategoryPredInterval = function(ProbMatrix, labels) {
+  ncases = nrow(ProbMatrix)
+  pred50 = rep(NA,ncases); pred80 = rep(NA,ncases)
+  for(i in 1:ncases) {
+    p = ProbMatrix[i,]
+    ip = order(p,decreasing=T)
+    pOrdered = p[ip] # decreasing order
+    labelsOrdered = labels[ip] # decreasing order
+    G = cumsum(pOrdered) # cumulative sum from largest
+    k1 = min(which(G>=0.5)) # level1= 0.5
+    k2 = min(which(G>=0.8)) # level2= 0.8
+    pred1 = labelsOrdered[1:k1]; pred2 = labelsOrdered[1:k2]
+    pred50[i] = paste(pred1,collapse="")
+    pred80[i] = paste(pred2,collapse="")
+  }
+  list(pred50=pred50, pred80=pred80)
+}
+
+preds_probs <- my_rf %>%
+  predict(newdata=h,type="prob") %>%
+  as_tibble() %>%
+  rename(T = True, F = False, N = No_consensus, A = Ambiguous) %>%
+  as.matrix()
+
+hx <- mutate(h,Is_cancer = recode(Is_cancer,True="T",False="F",No_consensus="N",Ambiguous="A"))
+
+cpi <- CategoryPredInterval(preds_probs,c("T","F","N","A"))
+table(hx$Is_cancer, cpi$pred50)
+table(hx$Is_cancer, cpi$pred80)
+```
+
+Is `ranger` any better?
+
+```{r ranger,echo=FALSE}
+
+```
