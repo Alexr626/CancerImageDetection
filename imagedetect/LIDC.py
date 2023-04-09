@@ -74,13 +74,20 @@ def lidc2Png(out_dir):
 def Lidc2Voxel(out_dir):
     nodules = extract_nodules()
 
-    folds = get_kfold([n[3] for n in nodules], 10)
+    # folds = get_kfold([n[3] for n in nodules], 10)
     f = open(out_dir + '/labels.csv', 'w')
-    f.write('id,malignancy,diameter,malignancy_th,fold,x,y,z\n')
-    for c, (nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
+    f.write('id,malignancy,diameter,malignancy_th,testing,x,y,z\n')
+    # load in train patients and test
+    train_patients = np.load('train_patients.csv')
+    for c, (case,nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
+        if train_patients == 1:
+            testing = 0
+        else:
+            testing = 1
+        
         np.save("{0}/{1}.npy".format(out_dir, c), nodule)
         line = "{0},{1},{2},{3},{4},{5},{6},{7}\n".format(
-            c, malignancy, diameter, malignancy_th, folds[c],x,y,z)
+            c, malignancy, diameter, malignancy_th, testing,x,y,z)
         f.write(line)
     f.close()
 

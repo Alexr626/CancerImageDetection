@@ -83,7 +83,6 @@ def map_malignancy_th(malignancy):
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     # Create label that is 0 if maligancy < 3, 1 if maligancy = 3, 2 if maligancy > 3
-    df['malignancy_th'] = df['malignancy'].apply(map_malignancy_th)
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
 
