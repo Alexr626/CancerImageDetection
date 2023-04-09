@@ -1,0 +1,2 @@
+256 50 <function expAllAtn.<locals>.model_opt at 0x7fd26abe3710>
+------------ fold 1 ------------

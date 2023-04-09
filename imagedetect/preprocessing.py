@@ -72,10 +72,21 @@ def generate_dataset(dir):
                 im2 = resize(im)
                 im2.save('{0}{1:.0f}.{2}.png'.format(folder, row.id, e))
 
+def map_malignancy_th(malignancy):
+    if malignancy < 3:
+        return 0
+    elif malignancy == 3:
+        return 1
+    else:
+        return 2
+    
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
+    # Create label that is 0 if maligancy < 3, 1 if maligancy = 3, 2 if maligancy > 3
+    df['malignancy_th'] = df['malignancy'].apply(map_malignancy_th)
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
+
 
     num_data = len(df_train)
     aug_size = 18
