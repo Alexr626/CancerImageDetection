@@ -57,6 +57,7 @@ class Trainer:
             # check if target 
             acc = self.calc_accuracy(output, target)
             print(target.shape)
+            target = T.squeeze(target, 1).long()
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
