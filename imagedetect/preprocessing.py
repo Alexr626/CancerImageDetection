@@ -94,7 +94,7 @@ def get_dataset(dir):
 
 
     num_data = len(df_train)
-    aug_size = 18
+    aug_size = 3
     x = t.zeros((num_data * aug_size, 1, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
@@ -178,7 +178,6 @@ def get_dataset3d(dir):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) == 2:
-        generate_dataset(sys.argv[1])
-    else:
-        print("run \"python3 preprocessing.py <path to output directory>\"")
+ 
+    generate_dataset("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
+ 

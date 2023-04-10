@@ -12,7 +12,7 @@ def extract_nodules():
     qu = pl.query(pl.Scan)
     im_size = 48
     total_nodules = 0
-    table = get_trans_table(qu)
+    # table = get_trans_table(qu)
     df = pd.read_csv('list3.2.csv')
 
     nodules = []
@@ -21,13 +21,27 @@ def extract_nodules():
 
         case = row['case']
 
-        if case not in table: continue
+        #if case not in table: continue
 
-        scan_id = table[case]
+        scan_id = row["scan"]
+        print(scan_id)
         scan = pl.query(pl.Scan).filter(pl.Scan.id == scan_id).first()
-        dcm = get_any_file(scan.get_path_to_dicom_files())
+        if scan is None:
+            continue
+        try:
+            print(scan.get_path_to_dicom_files())
+        except:
+            continue
+        
+        try:
+            
+            dcm = get_any_file(scan.get_path_to_dicom_files())
+        except:
+            continue
+        
         if dcm == "Fail":
             continue
+        print(dcm)
         intercept = dcm.RescaleIntercept
         slope = dcm.RescaleSlope
         nodules_names = row[8:][row[8:].notnull()].values
@@ -48,17 +62,18 @@ def extract_nodules():
             malignancy_th = 0
         else:
             malignancy_th = 1
-
-        annotations = [annt for annt in annotations if annt.bbox_dimensions(1).max() <= 31]
+        print(dir(annotations[0]))
+        annotations = [annt for annt in annotations if annt.bbox_dims(1).max() <= 31]
 
         if len(annotations) == 0:
             continue
         ann = annotations[0]
+        print(dir(ann))
         vol, seg = ann.uniform_cubic_resample(side_length=im_size - 1, verbose=0)
         view2d = vol
         view2d = hu_normalize(view2d, slope, intercept)
         #view2d *= seg
-        nodules.append((case, view2d, malignancy, row['eq. diam.'], malignancy_th, ann.centroid()))
+        nodules.append((case, view2d, malignancy, row['eq. diam.'], malignancy_th, ann.centroid))
 
     return nodules
 
@@ -79,7 +94,7 @@ def Lidc2Voxel(out_dir):
     f = open(out_dir + '/labels.csv', 'w')
     f.write('id,malignancy,diameter,malignancy_th,testing,x,y,z\n')
     # load in train patients and test
-    train_patients = pd.read_csv('Data/Meta/patient_id_train_list.csv')
+    train_patients = pd.read_csv('/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data/Meta/patient_id_train_list.csv')
     train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
     for c, (case, nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
         curr_in_train = int(train_patients[train_patients["Patient_id_shortened"] == "0001"]["In_train"])
@@ -106,18 +121,28 @@ def get_any_file(path):
         return None
     try:
         return dicom.read_file(files[0])
-    except:
+    except Exception as e:
+        print(e)
         print("Patient failed: " + files[1])
         return "Fail"
 
 
 def get_trans_table(qu):
     table = {}
+
+    
     for scan in qu:
-        path = scan.get_path_to_dicom_files()
-        dcm = get_any_file(path)
+        try:
+            path = scan.get_path_to_dicom_files()
+            dcm = get_any_file(path)
+            
+        except:
+            #print("Patient failed: " + path)
+            continue
         if dcm is None:
-            print("Warning: scan is empty", path)
+            # print("Warning: scan is empty", path)
+            continue
+        if dcm == "Fail":
             continue
         table[int(dcm.PatientID[10:])] = scan.id
     return table
@@ -138,7 +163,7 @@ def hu_normalize(im, slope, intercept):
 if __name__ == '__main__':
     import sys
     print(sys.argv)
-    Lidc2Voxel(sys.argv)
+    Lidc2Voxel("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
     # print(sys.argv)
     # if len(sys.argv) == 2:
     #     print(sys.argv[1])
