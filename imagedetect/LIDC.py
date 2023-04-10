@@ -13,7 +13,11 @@ def extract_nodules():
     im_size = 48
     total_nodules = 0
     # table = get_trans_table(qu)
-    df = pd.read_csv('list3.2.csv')
+    df = pd.read_csv('list3.2.csv', dtype={'case': str})
+    train_patients = pd.read_csv('/Users/alex/dev/STAT 447B/Project/Data/Meta/patient_id_train_list.csv')
+    train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
+
+    #curr_patient = train_patients["Patient_id"][0]
 
     nodules = []
     for _, row in df.iterrows():
@@ -22,11 +26,12 @@ def extract_nodules():
         case = row['case']
 
         #if case not in table: continue
-
         scan_id = row["scan"]
-        print(scan_id)
-        scan = pl.query(pl.Scan).filter(pl.Scan.id == scan_id).first()
+        print(case)
+        #print(scan_id)
+        scan = pl.query(pl.Scan).filter(pl.Scan.patient_id == ("LIDC-IDRI-" + str(case))).first()
         if scan is None:
+            print("Scan value: " + str(scan))
             continue
         try:
             print(scan.get_path_to_dicom_files())
@@ -40,8 +45,8 @@ def extract_nodules():
             continue
         
         if dcm == "Fail":
+            print("Dcm value: " + str(dcm))
             continue
-        print(dcm)
         intercept = dcm.RescaleIntercept
         slope = dcm.RescaleSlope
         nodules_names = row[8:][row[8:].notnull()].values
@@ -62,13 +67,13 @@ def extract_nodules():
             malignancy_th = 0
         else:
             malignancy_th = 1
-        print(dir(annotations[0]))
+        #print(dir(annotations[0]))
         annotations = [annt for annt in annotations if annt.bbox_dims(1).max() <= 31]
 
         if len(annotations) == 0:
             continue
         ann = annotations[0]
-        print(dir(ann))
+        #print(dir(ann))
         vol, seg = ann.uniform_cubic_resample(side_length=im_size - 1, verbose=0)
         view2d = vol
         view2d = hu_normalize(view2d, slope, intercept)
@@ -94,10 +99,10 @@ def Lidc2Voxel(out_dir):
     f = open(out_dir + '/labels.csv', 'w')
     f.write('id,malignancy,diameter,malignancy_th,testing,x,y,z\n')
     # load in train patients and test
-    train_patients = pd.read_csv('/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data/Meta/patient_id_train_list.csv')
+    train_patients = pd.read_csv('/Users/alex/dev/STAT 447B/Project/Data/Meta/patient_id_train_list.csv')
     train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
     for c, (case, nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
-        curr_in_train = int(train_patients[train_patients["Patient_id_shortened"] == "0001"]["In_train"])
+        curr_in_train = int(train_patients[train_patients["Patient_id_shortened"] == case]["In_train"])
         np.save("{0}/{1}.npy".format(out_dir, c), nodule)
         line = "{0},{1},{2},{3},{4},{5},{6},{7}\n".format(
             c, malignancy, diameter, malignancy_th, curr_in_train,x,y,z)
@@ -116,13 +121,14 @@ def get_kfold(labels, k):
 
 def get_any_file(path):
     files = glob.glob(path + "/*.dcm")
-    print(files[1])
     if len(files) < 1:
         return None
     try:
-        return dicom.read_file(files[0])
+        dicom_file = dicom.read_file(files[0])
+        #print("Patient dicom retrieved")
+        return dicom_file
     except Exception as e:
-        print(e)
+        #print(e)
         print("Patient failed: " + files[1])
         return "Fail"
 
@@ -137,10 +143,8 @@ def get_trans_table(qu):
             dcm = get_any_file(path)
             
         except:
-            #print("Patient failed: " + path)
             continue
         if dcm is None:
-            # print("Warning: scan is empty", path)
             continue
         if dcm == "Fail":
             continue
@@ -162,8 +166,7 @@ def hu_normalize(im, slope, intercept):
 
 if __name__ == '__main__':
     import sys
-    print(sys.argv)
-    Lidc2Voxel("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
+    Lidc2Voxel("/Users/alex/dev/STAT 447B/Project/Data/Meta/vision_preprocess_output")
     # print(sys.argv)
     # if len(sys.argv) == 2:
     #     print(sys.argv[1])
