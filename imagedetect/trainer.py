@@ -129,6 +129,7 @@ class Trainer:
 
     def calc_accuracy(self, output, target):
         # Check that the argmax of softmax is the same as the target
+        print(output.data)
         _, predicted = T.max(output.data, 1)
         # compare with the target tensor to get a tensor of correct predictions
         correct = (predicted == target)
