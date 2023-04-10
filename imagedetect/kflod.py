@@ -9,7 +9,7 @@ from sklearn import metrics
 from os import path
 
 def get_metrics(target, pred):
-    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred.argmax(dim=0), average='macro')
+    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred, average='weights')
     fpr, tpr, thresholds = metrics.roc_curve(target, pred)
     auc = metrics.auc(fpr, tpr)
     return prec, recall, auc
