@@ -56,7 +56,7 @@ class Trainer:
             output = self.model(data)
             # check if target 
             acc = self.calc_accuracy(output, target)
-            print(target.shape)
+            #print(target.shape)
             target = T.squeeze(target, 1).long()
             loss = self.loss(output, target)
             loss.backward()
@@ -68,6 +68,7 @@ class Trainer:
         
         # Get training accuracy
         tr_accuacy = T.mean(T.tensor(all_acc))
+        print(valid_acc)
         # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
@@ -126,7 +127,7 @@ class Trainer:
     def validate(self):
         all_pred, all_targets = self.predict()
         matches = self.calc_accuracy(all_pred, all_targets)
-        return [matches]
+        return matches
 
     def calc_accuracy(self, output, target):
         # Check that the argmax of softmax is the same as the target
@@ -136,7 +137,6 @@ class Trainer:
         correct = (predicted == target)
         # calculate the accuracy as the percentage of correct predictions
         accuracy = correct.float().mean()
-        print(accuracy)
         return accuracy
 
     def run(self):
