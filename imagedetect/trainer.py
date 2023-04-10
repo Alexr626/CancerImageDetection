@@ -98,10 +98,10 @@ class Trainer:
         va_dist = summery(valid_acc)
 
         pred, target = self.predict()
-        fpr, tpr, thresholds = metrics.roc_curve(target, pred)
-        auc = metrics.auc(fpr, tpr)
+        print(pred, target)
+        # auc = metrics.auc(fpr, tpr)
 
-        msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {auc:.2f} duration {duration:.2f}'
+        msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {3:.2f} duration {duration:.2f}'
         print(msg)
         self.log += msg + '\n'
 
