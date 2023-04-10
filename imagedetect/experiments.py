@@ -30,7 +30,7 @@ def expAllAtn(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='AllAtn',
           device='cuda:0',
           deterministic=True
@@ -68,7 +68,7 @@ def expLocalGlobal(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='LocalGlobalNetwork',
           device='cuda:0',
           deterministic=True
@@ -86,7 +86,7 @@ def expAllAtnBig(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='AllAtnBig',
           device='cuda:0',
           deterministic=True
@@ -110,7 +110,7 @@ def expResnetTrans(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='ResnetTrans',
           device='cuda:0',
           deterministic=True,
