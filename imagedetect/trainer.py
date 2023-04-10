@@ -56,8 +56,7 @@ class Trainer:
             output = self.model(data)
             # check if target 
             acc = self.calc_accuracy(output, target)
-            print(target)
-            target = T.argmax(target, dim=1)
+            print(target.shape)
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
