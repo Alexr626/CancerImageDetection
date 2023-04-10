@@ -110,7 +110,7 @@ class AllAtn(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -118,7 +118,7 @@ class AllAtn(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
+        x = T.softmax(x, dim=1)
         return x
 
 
@@ -135,7 +135,7 @@ class AllAtnBig(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -143,7 +143,7 @@ class AllAtnBig(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
+        x = T.softmax(x, dim=1)
         return x
 
 class LocalGlobalNetwork(nn.Module):
@@ -158,7 +158,7 @@ class LocalGlobalNetwork(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -166,5 +166,5 @@ class LocalGlobalNetwork(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
+        x = T.softmax(x, dim=1)
         return x
