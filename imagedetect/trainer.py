@@ -65,19 +65,16 @@ class Trainer:
             all_acc.append(acc.cpu())
 
         valid_acc = self.validate()
+        matches = (output.argmax(dim=1) == target)
+        acc = matches.float().mean()
         self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
-        def summery(data):
-            n = 0.0
-            s_dist = 0
-            for dist in data:
-                s_dist += T.sum(dist)
-                n += len(dist)
-
-            return s_dist.float() / n
+        # Calculate accuracy for each class based on the argmax of the output
+        
+        
         wandb.log({"loss": np.sum(all_losses) / len(all_losses), 
                    "epoch": epoch,
-                    "train_acc": summery(all_acc),
-                    "valid_acc": summery(valid_acc),
+                    "train_acc": all_acc,
+                    "valid_acc": valid_acc,
                     "duration": time.time() - s_time
                    })
 
@@ -130,8 +127,8 @@ class Trainer:
         return [matches]
 
     def calc_accuracy(self, x, y):
-        x_th = (x > 0.5).long()
-        matches = x_th == y.long()
+        # Check that the argmax of softmax is the same as the target
+        matches = (x.argmax(dim=1) == y)
         return matches
 
     def run(self):
