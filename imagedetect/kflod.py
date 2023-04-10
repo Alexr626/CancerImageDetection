@@ -9,7 +9,7 @@ from sklearn import metrics
 from os import path
 
 def get_metrics(target, pred):
-    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred.argmax(dim=1), average='macro')
+    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred, average='weighted')
     fpr, tpr, thresholds = metrics.roc_curve(target, pred)
     auc = metrics.auc(fpr, tpr)
     return prec, recall, auc
@@ -73,7 +73,7 @@ def kfold(src_path,
 
     pred, target = tr.predict()
     all_pred[i:i+pred.shape[0]] = pred
-    all_targets[i:i+target.shape[0]] = target
+    all_targets[i:i+target.shape[0]] = target.view(-1)
     i += target.shape[0]
 
     prec, recall, auc = get_metrics(target, pred)
