@@ -26,8 +26,6 @@ def extract_nodules():
         scan_id = table[case]
         scan = pl.query(pl.Scan).filter(pl.Scan.id == scan_id).first()
         dcm = get_any_file(scan.get_path_to_dicom_files())
-        if dcm == "Fail":
-            continue
         intercept = dcm.RescaleIntercept
         slope = dcm.RescaleSlope
         nodules_names = row[8:][row[8:].notnull()].values
@@ -39,15 +37,15 @@ def extract_nodules():
         if len(annotations) == 0: continue
 
         total_nodules += 1
-        malignancy = np.mean([ann.malignancy for ann in annotations])
-
+        malignancy = np.median([ann.malignancy for ann in annotations])
+        
         # 0 - benign, 1 - ambiguous, 2 - malignant
-        if malignancy >= 3.5:
-            malignancy_th = 2
-        elif malignancy <= 2.5:
+        if malignancy < 3:
             malignancy_th = 0
-        else:
+        elif malignancy == 3:
             malignancy_th = 1
+        else:
+            malignancy_th = 2
 
         annotations = [annt for annt in annotations if annt.bbox_dimensions(1).max() <= 31]
 
@@ -75,17 +73,21 @@ def lidc2Png(out_dir):
 
 def Lidc2Voxel(out_dir):
     nodules = extract_nodules()
+
     # folds = get_kfold([n[3] for n in nodules], 10)
     f = open(out_dir + '/labels.csv', 'w')
     f.write('id,malignancy,diameter,malignancy_th,testing,x,y,z\n')
     # load in train patients and test
-    train_patients = pd.read_csv('Data/Meta/patient_id_train_list.csv')
-    train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
+    train_patients = np.load('Data/Meta/patient_id_train_list.csv')
     for c, (case, nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
-        curr_in_train = int(train_patients[train_patients["Patient_id_shortened"] == "0001"]["In_train"])
+        if train_patients == 1:
+            testing = 0
+        else:
+            testing = 1
+        
         np.save("{0}/{1}.npy".format(out_dir, c), nodule)
         line = "{0},{1},{2},{3},{4},{5},{6},{7}\n".format(
-            c, malignancy, diameter, malignancy_th, curr_in_train,x,y,z)
+            c, malignancy, diameter, malignancy_th, testing,x,y,z)
         f.write(line)
     f.close()
 
@@ -101,14 +103,9 @@ def get_kfold(labels, k):
 
 def get_any_file(path):
     files = glob.glob(path + "/*.dcm")
-    print(files[1])
     if len(files) < 1:
         return None
-    try:
-        return dicom.read_file(files[0])
-    except:
-        print("Patient failed: " + files[1])
-        return "Fail"
+    return dicom.read_file(files[0])
 
 
 def get_trans_table(qu):
