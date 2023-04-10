@@ -106,7 +106,7 @@ class Trainer:
     def predict(self):
         self.model.eval()
         all_pred = T.zeros(len(self.valid_dataset.dataset), 3)
-        all_targets = T.zeros(len(self.valid_dataset.dataset), 3)
+        all_targets = T.zeros(len(self.valid_dataset.dataset))
         for batch_idx, (data, target) in enumerate(self.valid_dataset):
             with T.no_grad():
                 data, target = data.cuda(self.device), target.cuda(self.device)
@@ -114,10 +114,10 @@ class Trainer:
             st = batch_idx * self.batch_size
 
             all_pred[st:st + output.shape[0]] = output.cpu()
-            all_targets[st:st + output.shape[0]] = target.cpu()
+            all_targets[st:st + output.shape[0]] = target.squeeze.long().cpu()
 
         all_pred = all_pred.view(-1, 3).mean(dim=0)
-        all_targets = all_targets.view(-1, 3).mean(dim=0)
+        all_targets = all_targets.view(-1, 1).mean(dim=0)
         return all_pred, all_targets
 
 
