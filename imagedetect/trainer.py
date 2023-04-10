@@ -65,15 +65,16 @@ class Trainer:
             all_acc.append(acc.cpu())
 
         valid_acc = self.validate()
-        matches = (output.argmax(dim=1) == target)
-        acc = matches.float().mean()
-        self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
+        
+        # Get training accuracy
+        tr_accuacy = T.mean(all_acc)
+        # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
         
         wandb.log({"loss": np.sum(all_losses) / len(all_losses), 
                    "epoch": epoch,
-                    "train_acc": all_acc,
+                    "train_acc": tr_accuacy,
                     "valid_acc": valid_acc,
                     "duration": time.time() - s_time
                    })
@@ -95,7 +96,7 @@ class Trainer:
         va_dist = summery(valid_acc)
 
         pred, target = self.predict()
-        print(pred, target)
+        # print(pred, target)
         # auc = metrics.auc(fpr, tpr)
 
         msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {3:.2f} duration {duration:.2f}'
@@ -126,15 +127,14 @@ class Trainer:
         matches = self.calc_accuracy(all_pred, all_targets)
         return [matches]
 
-    def calc_accuracy(self, x, y):
+    def calc_accuracy(self, output, target):
         # Check that the argmax of softmax is the same as the target
-        print("x_valid")
-        print(x)
-        print(y)
-        print(x.shape)
-        print(y.shape)
-        matches = (x.argmax() == y)
-        return matches
+        _, predicted = T.max(output.data, 1)
+        # compare with the target tensor to get a tensor of correct predictions
+        correct = (predicted == target)
+        # calculate the accuracy as the percentage of correct predictions
+        accuracy = correct.float().mean()
+        return accuracy
 
     def run(self):
         start_t = time.time()

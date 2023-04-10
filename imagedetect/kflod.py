@@ -76,24 +76,24 @@ def kfold(src_path,
     all_targets[i:i+target.shape[0]] = target.view(-1)
     i += target.shape[0]
 
-    prec, recall, auc = get_metrics(target, pred)
-    print(f'AUC: {auc}, precision: {prec}, Recall: {recall}')
-    f.write(f'AUC: {auc}, precision: {prec}, Recall: {recall}\n')
+    #prec, recall, auc = get_metrics(target, pred)
+    #print(f'AUC: {auc}, precision: {prec}, Recall: {recall}')
+    #f.write(f'AUC: {auc}, precision: {prec}, Recall: {recall}\n')
 
     del tr
 
 
-    matches = calc_accuracy(all_pred, all_targets)
-    acc = matches.float().mean()
-    all_pred = all_pred.numpy()
-    all_targets = all_targets.numpy()
+    #matches = calc_accuracy(all_pred, all_targets)
+    #acc = matches.float().mean()
+    #all_pred = all_pred.numpy()
+    #all_targets = all_targets.numpy()
 
-    prec, recall, auc = get_metrics(all_targets, all_pred)
-    print(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
-    f.write(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
-    result = {'all_pred': all_pred, 'all_targets': all_targets}
-    T.save(result, path.join('results',f'{name}_result'))
-    f.close()
+    #prec, recall, auc = get_metrics(all_targets, all_pred)
+    #print(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
+    #f.write(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
+    #result = {'all_pred': all_pred, 'all_targets': all_targets}
+    #T.save(result, path.join('results',f'{name}_result'))
+    #f.close()
 
 
 
