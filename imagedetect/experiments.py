@@ -99,8 +99,8 @@ def expResnetTrans(data_path):
         model = resnet50(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.fc.in_features, 3),
+            nn.Softmax(dim=1)
         )
 
         optm = Adam(model.fc.parameters())
