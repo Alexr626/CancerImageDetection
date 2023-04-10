@@ -128,7 +128,8 @@ class Trainer:
 
     def calc_accuracy(self, x, y):
         # Check that the argmax of softmax is the same as the target
-        print("x_valid" + x)
+        print("x_valid")
+        print(x)
         print(y)
         print(x.shape)
         print(y.shape)
