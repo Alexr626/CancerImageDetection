@@ -47,7 +47,7 @@ def expBasicResnet(data_path):
 
     kfold(data_path,
           256,
-          50,
+          200,
           model_optimizer=model_opt,
           loss=nn.CrossEntropyLoss(),
           name='BasicResnet',
