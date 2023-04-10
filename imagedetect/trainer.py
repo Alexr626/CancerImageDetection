@@ -117,7 +117,7 @@ class Trainer:
             all_targets[st:st + output.shape[0]] = target.squeeze().long().cpu()
 
         all_pred = all_pred.view(-1, 3).mean(dim=0)
-        all_targets = all_targets.view(-1, 1).mean(dim=0)
+        all_targets = all_targets.view(-1, 1)
         return all_pred, all_targets
 
 
@@ -133,7 +133,7 @@ class Trainer:
         print(y)
         print(x.shape)
         print(y.shape)
-        matches = (x.argmax(dim=1) == y)
+        matches = (x.argmax() == y)
         return matches
 
     def run(self):
