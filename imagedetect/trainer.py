@@ -54,7 +54,9 @@ class Trainer:
             data, target = data.cuda(self.device), target.cuda(self.device)
             self.optimizer.zero_grad()
             output = self.model(data)
+            # check if target 
             acc = self.calc_accuracy(output, target)
+            print(output, target)
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
