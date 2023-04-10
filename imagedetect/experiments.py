@@ -124,8 +124,8 @@ def expDensenetTrans(data_path):
         model = densenet121(pretrained=True)
         #model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.classifier = nn.Sequential(
-            nn.Linear(model.classifier.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.classifier.in_features, 3),
+            nn.Softmax(dim=1)
         )
 
         optm = Adam(model.classifier.parameters())
@@ -135,7 +135,7 @@ def expDensenetTrans(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='DensenetTrans',
           device='cuda:0',
           deterministic=True,
@@ -150,8 +150,8 @@ def expResnet18Trans(data_path):
         model = resnet18(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.fc.in_features, 3),
+            nn.Softmax(dim=1)
         )
 
         optm = Adam(model.fc.parameters())
