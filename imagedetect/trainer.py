@@ -119,6 +119,7 @@ class Trainer:
 
         all_pred = all_pred.view(-1, 3).mean(dim=0)
         all_targets = all_targets.view(-1, 1)
+        print(all_pred, all_targets)
         return all_pred, all_targets
 
 
