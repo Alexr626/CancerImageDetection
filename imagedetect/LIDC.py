@@ -78,9 +78,9 @@ def Lidc2Voxel(out_dir):
     f = open(out_dir + '/labels.csv', 'w')
     f.write('id,malignancy,diameter,malignancy_th,testing,x,y,z\n')
     # load in train patients and test
-    train_patients = np.load('Data/Meta/patient_id_train_list.csv')
+    train_patients = pd.read_csv('Data/Meta/patient_id_train_list.csv')
     for c, (case, nodule, malignancy, diameter, malignancy_th,(x,y,z)) in enumerate(nodules):
-        if train_patients == 1:
+        if train_patients["Patient_id"] == case] == 1:
             testing = 0
         else:
             testing = 1
