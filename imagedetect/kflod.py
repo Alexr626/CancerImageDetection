@@ -73,7 +73,7 @@ def kfold(src_path,
 
     pred, target = tr.predict()
     all_pred[i:i+pred.shape[0]] = pred
-    all_targets[i:i+target.shape[0]] = target
+    all_targets[i:i+target.shape[0]] = target.view(-1)
     i += target.shape[0]
 
     prec, recall, auc = get_metrics(target, pred)
