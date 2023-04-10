@@ -117,7 +117,7 @@ class Trainer:
             all_pred[st:st + output.shape[0]] = output.cpu()
             all_targets[st:st + output.shape[0]] = target.squeeze().long().cpu()
 
-        all_pred = all_pred.view(-1, 3).mean(dim=0)
+        
         all_targets = all_targets.view(-1, 1)
         print(all_pred, all_targets)
         return all_pred, all_targets
