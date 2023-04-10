@@ -48,7 +48,7 @@ class BasicResnet(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -56,7 +56,7 @@ class BasicResnet(nn.Module):
         x = self.resnet(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
+        x = T.softmax(x, dim=1)
         return x
 
 # Copied from https://github.com/heykeetae/Self-Attention-GAN

@@ -49,7 +49,7 @@ def expBasicResnet(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='BasicResnet',
           device='cuda:0',
           deterministic=True
