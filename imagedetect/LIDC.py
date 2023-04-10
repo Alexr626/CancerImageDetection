@@ -137,11 +137,7 @@ def hu_normalize(im, slope, intercept):
 
 if __name__ == '__main__':
     import sys
-    print(sys.argv)
-    Lidc2Voxel(sys.argv)
-    # print(sys.argv)
-    # if len(sys.argv) == 2:
-    #     print(sys.argv[1])
-    #     Lidc2Voxel(sys.argv[1])
-    # else:
-    #     print("run \"python3 LIDC.py <path to output directory>\"")
+    if len(sys.argv) == 2:
+        Lidc2Voxel(sys.argv[1])
+    else:
+        print("run \"python3 LIDC.py <path to output directory>\"")

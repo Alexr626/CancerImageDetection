@@ -9,15 +9,15 @@ from sklearn import metrics
 from os import path
 
 def get_metrics(target, pred):
-    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred>0.5, average='binary')
+    prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred.argmax(axis=1), average='macro')
     fpr, tpr, thresholds = metrics.roc_curve(target, pred)
     auc = metrics.auc(fpr, tpr)
     return prec, recall, auc
 
 
 def calc_accuracy(x, y):
-    x_th = (x > 0.5).long()
-    matches = x_th == y.long()
+    # Check if the argmax index of the output matches the target
+    matches = (x.argmax(dim=1) == y)
     return matches
 
 def reset_rand():
@@ -41,46 +41,46 @@ def kfold(src_path,
     print(f'Experiment {name}')
     all_pred = T.zeros(849)
     all_targets = T.zeros(849)
-    i =0
+    i = 0
     f = open(path.join('results', f'{name}.txt'), 'w')
     f.write(f'{batch_size} {n_epochs} {model_optimizer}\n')
-    for fold in range(10):
+    
 
-        reset_rand()
+    reset_rand()
 
-        print(f'------------ fold {fold+1} ------------')
-        f.write(f'------------ fold {fold+1} ------------\n')
-        trset, testset = dataset_func(path.join(src_path,str(fold)))
-        print(f'Training Size: {len(trset)}, Validation Size: {len(testset)}')
-        trset = DataLoader(trset, batch_size, shuffle=True)
-        testset = DataLoader(testset, batch_size, shuffle=False)
-        model,optimizer = model_optimizer()
-        tr = Trainer(
-            trset,
-            testset,
-            batch_size,
-            n_epochs,
-            model,
-            optimizer,
-            loss,
-            f'{name}_{fold}',
-            device,
-            deterministic,
-            parallel
-        )
+    # print(f'------------ fold {fold+1} ------------')
+    # f.write(f'------------ fold {fold+1} ------------\n')
+    trset, testset = dataset_func(path.join(src_path))
+    print(f'Training Size: {len(trset)}, Validation Size: {len(testset)}')
+    trset = DataLoader(trset, batch_size, shuffle=True)
+    testset = DataLoader(testset, batch_size, shuffle=False)
+    model,optimizer = model_optimizer()
+    tr = Trainer(
+        trset,
+        testset,
+        batch_size,
+        n_epochs,
+        model,
+        optimizer,
+        loss,
+        f'{name}',
+        device,
+        deterministic,
+        parallel
+    )
 
-        tr.run()
+    tr.run()
 
-        pred, target = tr.predict()
-        all_pred[i:i+pred.shape[0]] = pred
-        all_targets[i:i+target.shape[0]] = target
-        i += target.shape[0]
+    pred, target = tr.predict()
+    all_pred[i:i+pred.shape[0]] = pred
+    all_targets[i:i+target.shape[0]] = target
+    i += target.shape[0]
 
-        prec, recall, auc = get_metrics(target, pred)
-        print(f'AUC: {auc}, precision: {prec}, Recall: {recall}')
-        f.write(f'AUC: {auc}, precision: {prec}, Recall: {recall}\n')
+    prec, recall, auc = get_metrics(target, pred)
+    print(f'AUC: {auc}, precision: {prec}, Recall: {recall}')
+    f.write(f'AUC: {auc}, precision: {prec}, Recall: {recall}\n')
 
-        del tr
+    del tr
 
 
     matches = calc_accuracy(all_pred, all_targets)
@@ -89,8 +89,8 @@ def kfold(src_path,
     all_targets = all_targets.numpy()
 
     prec, recall, auc = get_metrics(all_targets, all_pred)
-    print(f'accuray: {acc}, AUC: {auc}, precision: {prec}, Recall: {recall}')
-    f.write(f'accuray: {acc}, AUC: {auc}, precision: {prec}, Recall: {recall}')
+    print(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
+    f.write(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
     result = {'all_pred': all_pred, 'all_targets': all_targets}
     T.save(result, path.join('results',f'{name}_result'))
     f.close()
