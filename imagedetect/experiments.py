@@ -145,7 +145,7 @@ def expResnet18Trans(data_path):
     reset_rand()
 
     def model_opt():
-        model = resnet18(pretrained=True)
+        model = resnet50(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
             nn.Linear(model.fc.in_features, 3),
