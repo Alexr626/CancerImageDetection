@@ -161,7 +161,7 @@ def expResnet18Trans(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='Resnet18Trans',
           device='cuda:0',
           deterministic=True,
