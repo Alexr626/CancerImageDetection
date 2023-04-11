@@ -136,7 +136,7 @@ def get_dataset3d(dir):
     df_train = df[df.testing == 0]
 
     num_data = len(df_train)
-    aug_size = 18
+    aug_size = 3
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0

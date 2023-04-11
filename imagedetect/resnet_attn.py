@@ -126,7 +126,7 @@ class AllAtnBig(nn.Module):
         self.resnetAttn = nn.Sequential(
             conv3x3(1, 32),
             nn.ReLU(inplace=True),
-            SelfAttn(32),
+            SelfAttn(32),   
             nn.Dropout(0.1),
             SelfAttn(32),
             SelfAttn(32),
