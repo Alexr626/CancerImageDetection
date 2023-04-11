@@ -69,7 +69,12 @@ def kfold(src_path,
         parallel
     )
 
-    tr.run()
+    tr.run() 
+    # run prediction on test set and get metrics
+    pred, target = tr.predict()
+    confusion_matrix = confusion_matrix(target, pred)
+    print(confusion_matrix)
+
 
     #pred, target = tr.predict()
     #all_pred[i:i+pred.shape[0]] = pred
