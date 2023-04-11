@@ -100,7 +100,6 @@ def expResnetTrans(data_path):
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
             nn.Linear(model.fc.in_features, 3),
-            nn.Softmax(dim=1)
         )
 
         optm = Adam(model.fc.parameters())
@@ -125,7 +124,6 @@ def expDensenetTrans(data_path):
         #model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.classifier = nn.Sequential(
             nn.Linear(model.classifier.in_features, 3),
-            nn.Softmax(dim=1)
         )
 
         optm = Adam(model.classifier.parameters())

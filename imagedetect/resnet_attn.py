@@ -56,7 +56,6 @@ class BasicResnet(nn.Module):
         x = self.resnet(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.softmax(x, dim=1)
         return x
 
 # Copied from https://github.com/heykeetae/Self-Attention-GAN
@@ -118,7 +117,6 @@ class AllAtn(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.softmax(x, dim=1)
         return x
 
 
@@ -143,7 +141,6 @@ class AllAtnBig(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.softmax(x, dim=1)
         return x
 
 class LocalGlobalNetwork(nn.Module):
@@ -166,5 +163,4 @@ class LocalGlobalNetwork(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.softmax(x, dim=1)
         return x
