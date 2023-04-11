@@ -65,7 +65,7 @@ def expLocalGlobal(data_path):
         return model, optm
 
     kfold(data_path,
-          256,
+          48,
           50,
           model_optimizer=model_opt,
           loss=nn.CrossEntropyLoss(),
