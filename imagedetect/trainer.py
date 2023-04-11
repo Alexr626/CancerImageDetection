@@ -133,6 +133,7 @@ class Trainer:
         # Check that the argmax of softmax is the same as the target
         #print(output.data)
         predicted = T.argmax(output, dim=1)
+        print(predicted, target)
         # compare with the target tensor to get a tensor of correct predictions
         correct = (predicted == target)
         # calculate the accuracy as the percentage of correct predictions
