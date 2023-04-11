@@ -148,7 +148,8 @@ def expResnet18Trans(data_path):
         model = resnet50(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 3),
+            nn.Linear(model.fc.in_features, 1),
+            nn.Sigmoid()
             # nn.Softmax(dim=1)
         )
 
@@ -159,7 +160,7 @@ def expResnet18Trans(data_path):
           256,
           500,
           model_optimizer=model_opt,
-          loss=nn.CrossEntropyLoss(),
+          loss=nn.BCELoss(),
           name='Resnet18Trans',
           device='cuda:0',
           deterministic=True,
