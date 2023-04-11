@@ -68,7 +68,8 @@ class Trainer:
         
         # Get training accuracy
         tr_accuacy = T.mean(T.tensor(all_acc))
-        print(valid_acc)
+        print("Train Accuracy "+tr_accuacy)
+        print("Validation Accuracy" +valid_acc)
         # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
