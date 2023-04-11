@@ -136,9 +136,9 @@ def get_dataset3d(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
-    df_train['malignancy_th'] = df_train.malignancy.map(map_malignancy_th)
-    df_test['malignancy_th'] = df_test.malignancy.map(map_malignancy_th)
-    
+    df_train['malignancy_response'] = df_train.malignancy.map(map_malignancy_th)
+    df_test['malignancy_response'] = df_test.malignancy.map(map_malignancy_th)
+
     num_data = len(df_train)
     aug_size = 3
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
@@ -149,7 +149,7 @@ def get_dataset3d(dir):
         for j in range(aug_size):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
-            y[c * aug_size + j][0] = row.malignancy_th
+            y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]
             x[c * aug_size + j, 2, :, :] = x[c * aug_size + j, 0, :, :]
         c += 1
@@ -169,7 +169,7 @@ def get_dataset3d(dir):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
             print(path.join(dir,f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
-            y[c * aug_size + j][0] = row.malignancy_th
+            y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]
             x[c * aug_size + j, 2, :, :] = x[c * aug_size + j, 0, :, :]
         c += 1
