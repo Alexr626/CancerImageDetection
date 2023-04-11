@@ -50,6 +50,14 @@ def generate_dataset(dir):
     # Augmenter for training data
     augmenter = Augmenter(hflip=True, rotate=True, blurring=True)
     augmenter2 = Augmenter(hflip=False, rotate=False, blurring=False)
+    # iterate through truth table of possible permutaiton of augmentations
+    augmenter3 = Augmenter(hflip=True, rotate=True, blurring=False)
+    augmenter4 = Augmenter(hflip=True, rotate=False, blurring=True)
+    augmenter5 = Augmenter(hflip=False, rotate=True, blurring=True)
+    augmenter6 = Augmenter(hflip=True, rotate=False, blurring=False)
+    augmenter7 = Augmenter(hflip=False, rotate=True, blurring=False)
+    augmenter8 = Augmenter(hflip=False, rotate=False, blurring=True)
+    
 
 
     for i, row in df.iterrows():
@@ -140,7 +148,7 @@ def get_dataset3d(dir):
     df_test['malignancy_response'] = df_test.malignancy.map(map_malignancy_th)
 
     num_data = len(df_train)
-    aug_size = 3
+    aug_size = 18
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
