@@ -126,6 +126,7 @@ class Trainer:
 
     def validate(self):
         all_pred, all_targets = self.predict()
+        print(all_pred, all_targets)
         matches = self.calc_accuracy(all_pred, all_targets)
         return matches
 
