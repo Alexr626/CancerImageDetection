@@ -72,6 +72,8 @@ class Trainer:
         print(tr_accuacy)
         print("\n Validation Accuracy: ")
         print(valid_acc)
+        # auc 
+        auc = metrics.roc_auc_score(target, output)
         # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
@@ -80,6 +82,7 @@ class Trainer:
                    "epoch": epoch,
                     "train_acc": tr_accuacy,
                     "valid_acc": valid_acc,
+                    "auc": auc,
                     "duration": time.time() - s_time
                    })
 

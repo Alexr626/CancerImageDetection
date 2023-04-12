@@ -175,7 +175,7 @@ def get_dataset3d(dir):
         id = int(row.id)
         for j in range(aug_size):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
-            print(path.join(dir,f'{id:.0f}.{j}.png'))
+            # print(path.join(dir,f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
             y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]

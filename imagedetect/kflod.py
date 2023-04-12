@@ -74,6 +74,8 @@ def kfold(src_path,
     pred, target = tr.predict()
     matrix = metrics.confusion_matrix(target, pred)
     print(matrix)
+    # determine 50% prediction interval
+    
 
 
     #pred, target = tr.predict()
