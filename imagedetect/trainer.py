@@ -50,32 +50,45 @@ class Trainer:
         self.model.train()
         all_losses = []
         all_acc = []
+        outputs = []
+        targets = []
         for data, target in self.dataset:
             data, target = data.cuda(self.device), target.cuda(self.device)
             self.optimizer.zero_grad()
             output = self.model(data)
+            # check if target 
             acc = self.calc_accuracy(output, target)
+            #print(target.shape)
+            target = T.squeeze(target, 1).long()
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
             all_losses.append(loss.item())
             all_acc.append(acc.cpu())
+            outputs.extend(output.softmax(dim=1).detach().cpu().numpy())
+            targets.extend(target.detach().cpu().numpy())
+
+
 
         valid_acc = self.validate()
-        self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
-        def summery(data):
-            n = 0.0
-            s_dist = 0
-            for dist in data:
-                s_dist += T.sum(dist)
-                n += len(dist)
-
-            return s_dist.float() / n
+        # auc 
+        auc = metrics.roc_auc_score(targets, outputs, multi_class='ovr')
+        # Get training accuracy
+        tr_accuacy = T.mean(T.tensor(all_acc))
+        print("Training Accuracy: ")
+        print(tr_accuacy)
+        print("\n Validation Accuracy: ")
+        print(valid_acc)
+        # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
+        # Calculate accuracy for each class based on the argmax of the output
+        
+        
         wandb.log({"loss": np.sum(all_losses) / len(all_losses), 
                    "epoch": epoch,
-                    "train_acc": summery(all_acc),
-                    "valid_acc": summery(valid_acc),
-                    "duration": time.time() - s_time
+                    "train_acc": tr_accuacy,
+                    "valid_acc": valid_acc,
+                    "duration": time.time() - s_time,
+                    "auc": auc
                    })
 
     def report(self, all_losses, all_acc, valid_acc, epoch, duration):
@@ -95,17 +108,17 @@ class Trainer:
         va_dist = summery(valid_acc)
 
         pred, target = self.predict()
-        fpr, tpr, thresholds = metrics.roc_curve(target, pred)
-        auc = metrics.auc(fpr, tpr)
+        # print(pred, target)
+        # auc = metrics.auc(fpr, tpr)
 
-        msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {auc:.2f} duration {duration:.2f}'
+        msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {3:.2f} duration {duration:.2f}'
         print(msg)
         self.log += msg + '\n'
 
 
     def predict(self):
         self.model.eval()
-        all_pred = T.zeros(len(self.valid_dataset.dataset))
+        all_pred = T.zeros(len(self.valid_dataset.dataset), 3)
         all_targets = T.zeros(len(self.valid_dataset.dataset))
         for batch_idx, (data, target) in enumerate(self.valid_dataset):
             with T.no_grad():
@@ -113,23 +126,31 @@ class Trainer:
                 output = self.model(data)
             st = batch_idx * self.batch_size
 
-            all_pred[st:st + output.shape[0]] = output.cpu().squeeze()
-            all_targets[st:st + output.shape[0]] = target.cpu().squeeze()
+            all_pred[st:st + output.shape[0]] = output.cpu()
+            all_targets[st:st + output.shape[0]] = target.squeeze().long().cpu()
 
-        all_pred = all_pred.view(-1, 3).mean(dim=1)
-        all_targets = all_targets.view(-1, 3).mean(dim=1)
+        
+        all_targets = all_targets.view(-1, 1)
+        # print(all_pred, all_targets)
         return all_pred, all_targets
 
 
     def validate(self):
         all_pred, all_targets = self.predict()
+        # print(all_pred, all_targets)
         matches = self.calc_accuracy(all_pred, all_targets)
-        return [matches]
-
-    def calc_accuracy(self, x, y):
-        x_th = (x > 0.5).long()
-        matches = x_th == y.long()
         return matches
+
+    def calc_accuracy(self, output, target):
+        # Check that the argmax of softmax is the same as the target
+        #print(output.data)
+        predicted = T.argmax(output, dim=1)
+        # print(predicted, target)
+        # compare with the target tensor to get a tensor of correct predictions
+        correct = (predicted == target.to(predicted.dtype))
+        # calculate the accuracy as the percentage of correct predictions
+        accuracy = correct.float().mean()
+        return accuracy
 
     def run(self):
         start_t = time.time()

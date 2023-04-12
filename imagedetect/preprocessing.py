@@ -42,21 +42,26 @@ def resize(im):
 
 
 def generate_dataset(dir):
+    # Load in csv created in LIDC.py
     df = pd.read_csv(dir+'/labels.csv')
-    df['testing'] = 1
+
+    # Get voxel data
     voxels = np.zeros((len(df),48,48,48), dtype=np.uint8)
+    # Augmenter for training data
     augmenter = Augmenter(hflip=True, rotate=True, blurring=True)
     augmenter2 = Augmenter(hflip=False, rotate=False, blurring=False)
+
+
     for i, row in df.iterrows():
         voxels[int(row.id)] = np.load('{0}/{1:.0f}.npy'.format(dir,row.id))
 
-    for i in range(10):
-        folder = '{0}/{1}/'.format(dir,i)
+    for i in range(1):
+        folder = '{0}/'.format(dir)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        tests = df[df.fold == i].copy()
-        trains = df[df.fold != i].copy()
-        trains.testing = 0
+        tests = df[df.testing == 1].copy()
+        trains = df[df.testing == 0].copy()
+        # trains.testing = 0
         new_df = pd.concat([tests, trains])
         new_df.to_csv(folder+'/labels.csv', index=False)
 
@@ -71,25 +76,25 @@ def generate_dataset(dir):
             for e,im in enumerate(augmenter.augment(voxel)):
                 im2 = resize(im)
                 im2.save('{0}{1:.0f}.{2}.png'.format(folder, row.id, e))
+        
 
 def map_malignancy_th(malignancy):
-    if malignancy < 3:
-        return 0
-    elif malignancy == 3:
-        return 1
+    if malignancy >= 3.5:
+        return  2
+    elif malignancy <= 2:
+        return  0
     else:
-        return 2
+        return  1
     
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     # Create label that is 0 if maligancy < 3, 1 if maligancy = 3, 2 if maligancy > 3
-    df['malignancy_th'] = df['malignancy'].apply(map_malignancy_th)
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
 
 
     num_data = len(df_train)
-    aug_size = 18
+    aug_size = 3
     x = t.zeros((num_data * aug_size, 1, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
@@ -129,7 +134,9 @@ def get_dataset3d(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
-
+    df_train["malignancy_response"] = df_train["malignancy"].apply(map_malignancy_th)
+    df_test["malignancy_response"] = df_test["malignancy"].apply(map_malignancy_th)
+    print(df_train["malignancy_response"].value_counts())
     num_data = len(df_train)
     aug_size = 18
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
@@ -140,7 +147,7 @@ def get_dataset3d(dir):
         for j in range(aug_size):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
-            y[c * aug_size + j][0] = row.malignancy_th
+            y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]
             x[c * aug_size + j, 2, :, :] = x[c * aug_size + j, 0, :, :]
         c += 1
@@ -160,7 +167,7 @@ def get_dataset3d(dir):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
             print(path.join(dir,f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
-            y[c * aug_size + j][0] = row.malignancy_th
+            y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]
             x[c * aug_size + j, 2, :, :] = x[c * aug_size + j, 0, :, :]
         c += 1
@@ -173,7 +180,6 @@ def get_dataset3d(dir):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) == 2:
-        generate_dataset(sys.argv[1])
-    else:
-        print("run \"python3 preprocessing.py <path to output directory>\"")
+ 
+    generate_dataset("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
+ 

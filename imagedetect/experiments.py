@@ -30,7 +30,7 @@ def expAllAtn(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='AllAtn',
           device='cuda:0',
           deterministic=True
@@ -47,9 +47,9 @@ def expBasicResnet(data_path):
 
     kfold(data_path,
           256,
-          50,
+          200,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='BasicResnet',
           device='cuda:0',
           deterministic=True
@@ -65,10 +65,10 @@ def expLocalGlobal(data_path):
         return model, optm
 
     kfold(data_path,
-          256,
+          48,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='LocalGlobalNetwork',
           device='cuda:0',
           deterministic=True
@@ -86,7 +86,7 @@ def expAllAtnBig(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='AllAtnBig',
           device='cuda:0',
           deterministic=True
@@ -99,8 +99,7 @@ def expResnetTrans(data_path):
         model = resnet50(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.fc.in_features, 3),
         )
 
         optm = Adam(model.fc.parameters())
@@ -110,7 +109,7 @@ def expResnetTrans(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='ResnetTrans',
           device='cuda:0',
           deterministic=True,
@@ -124,8 +123,7 @@ def expDensenetTrans(data_path):
         model = densenet121(pretrained=True)
         #model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.classifier = nn.Sequential(
-            nn.Linear(model.classifier.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.classifier.in_features, 3),
         )
 
         optm = Adam(model.classifier.parameters())
@@ -135,7 +133,7 @@ def expDensenetTrans(data_path):
           256,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='DensenetTrans',
           device='cuda:0',
           deterministic=True,
@@ -147,21 +145,21 @@ def expResnet18Trans(data_path):
     reset_rand()
 
     def model_opt():
-        model = resnet18(pretrained=True)
+        model = resnet50(pretrained=True)
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         model.fc = nn.Sequential(
-            nn.Linear(model.fc.in_features, 1),
-            nn.Sigmoid()
+            nn.Linear(model.fc.in_features, 3),
+            # nn.Softmax(dim=1)
         )
 
         optm = Adam(model.fc.parameters())
         return model, optm
 
     kfold(data_path,
-          256,
+          128,
           50,
           model_optimizer=model_opt,
-          loss=nn.BCELoss(),
+          loss=nn.CrossEntropyLoss(),
           name='Resnet18Trans',
           device='cuda:0',
           deterministic=True,

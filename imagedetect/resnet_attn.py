@@ -48,7 +48,7 @@ class BasicResnet(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -56,7 +56,6 @@ class BasicResnet(nn.Module):
         x = self.resnet(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
         return x
 
 # Copied from https://github.com/heykeetae/Self-Attention-GAN
@@ -110,7 +109,7 @@ class AllAtn(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -118,7 +117,6 @@ class AllAtn(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
         return x
 
 
@@ -128,14 +126,14 @@ class AllAtnBig(nn.Module):
         self.resnetAttn = nn.Sequential(
             conv3x3(1, 32),
             nn.ReLU(inplace=True),
-            SelfAttn(32),
+            SelfAttn(32),   
             nn.Dropout(0.1),
             SelfAttn(32),
             SelfAttn(32),
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -143,7 +141,6 @@ class AllAtnBig(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
         return x
 
 class LocalGlobalNetwork(nn.Module):
@@ -158,7 +155,7 @@ class LocalGlobalNetwork(nn.Module):
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d((1,1))
         )
-        self.fc1 = nn.Linear(32, 1)
+        self.fc1 = nn.Linear(32, 3)
 
 
     def forward(self, x):
@@ -166,5 +163,4 @@ class LocalGlobalNetwork(nn.Module):
         x = self.resnetAttn(x)
         x = x.view(-1, x.size()[1])
         x = self.fc1(x)
-        x = T.sigmoid(x)
         return x
