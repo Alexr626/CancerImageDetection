@@ -50,6 +50,8 @@ class Trainer:
         self.model.train()
         all_losses = []
         all_acc = []
+        outputs = []
+        targets = []
         for data, target in self.dataset:
             data, target = data.cuda(self.device), target.cuda(self.device)
             self.optimizer.zero_grad()
@@ -63,6 +65,8 @@ class Trainer:
             self.optimizer.step()
             all_losses.append(loss.item())
             all_acc.append(acc.cpu())
+            outputs.append(output.cpu())
+            targets.append(target.cpu())
 
         valid_acc = self.validate()
         
@@ -73,7 +77,7 @@ class Trainer:
         print("\n Validation Accuracy: ")
         print(valid_acc)
         # auc 
-        auc = metrics.roc_auc_score(np.array(target.cpu()), np.array(output.cpu()))
+        auc = metrics.roc_auc_score(outputs, targets)
         # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
