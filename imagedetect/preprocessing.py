@@ -81,7 +81,7 @@ def generate_dataset(dir):
 def map_malignancy_th(malignancy):
     if malignancy >= 3.5:
         return  2
-    elif malignancy <= 2.5:
+    elif malignancy <= 2:
         return  0
     else:
         return  1

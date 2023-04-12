@@ -65,7 +65,7 @@ class Trainer:
             self.optimizer.step()
             all_losses.append(loss.item())
             all_acc.append(acc.cpu())
-            outputs.extend(output.detach().cpu().numpy())
+            outputs.extend(output.softmax(dim=1).detach().cpu().numpy())
             targets.extend(target.detach().cpu().numpy())
 
 
