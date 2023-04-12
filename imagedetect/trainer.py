@@ -50,6 +50,8 @@ class Trainer:
         self.model.train()
         all_losses = []
         all_acc = []
+        outputs = []
+        targets = []
         for data, target in self.dataset:
             data, target = data.cuda(self.device), target.cuda(self.device)
             self.optimizer.zero_grad()
@@ -63,9 +65,14 @@ class Trainer:
             self.optimizer.step()
             all_losses.append(loss.item())
             all_acc.append(acc.cpu())
+            outputs.extend(output.detach().cpu().numpy())
+            targets.extend(target.detach().cpu().numpy())
+
+
 
         valid_acc = self.validate()
-        
+        # auc 
+        auc = metrics.roc_auc_score(targets, outputs, multi_class='ovr')
         # Get training accuracy
         tr_accuacy = T.mean(T.tensor(all_acc))
         print("Training Accuracy: ")

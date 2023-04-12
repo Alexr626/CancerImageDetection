@@ -79,12 +79,12 @@ def generate_dataset(dir):
         
 
 def map_malignancy_th(malignancy):
-    if malignancy < 3:
-        return 0
-    elif malignancy == 3:
-        return 1
+    if malignancy >= 3.5:
+        return  2
+    elif malignancy <= 2.5:
+        return  0
     else:
-        return 2
+        return  1
     
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
@@ -134,9 +134,11 @@ def get_dataset3d(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
-
+    df_train["malignancy_response"] = df_train["malignancy"].apply(map_malignancy_th)
+    df_test["malignancy_response"] = df_test["malignancy"].apply(map_malignancy_th)
+    print(df_train["malignancy_response"].value_counts())
     num_data = len(df_train)
-    aug_size = 3
+    aug_size = 18
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
@@ -145,7 +147,7 @@ def get_dataset3d(dir):
         for j in range(aug_size):
             im = imread(path.join(dir, f'{id:.0f}.{j}.png'))
             x[c * aug_size + j, 0, :, :] = t.from_numpy(im)
-            y[c * aug_size + j][0] = row.malignancy_th
+            y[c * aug_size + j][0] = row.malignancy_response
             x[c * aug_size + j, 1, :, :] = x[c * aug_size + j, 0, :, :]
             x[c * aug_size + j, 2, :, :] = x[c * aug_size + j, 0, :, :]
         c += 1
