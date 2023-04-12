@@ -65,8 +65,8 @@ class Trainer:
             self.optimizer.step()
             all_losses.append(loss.item())
             all_acc.append(acc.cpu())
-            outputs.append(output.cpu())
-            targets.append(target.cpu())
+            outputs.append(output.detach().cpu().numpy())
+            targets.append(target.detach().cpu().numpy())
 
         valid_acc = self.validate()
         
@@ -77,7 +77,7 @@ class Trainer:
         print("\n Validation Accuracy: ")
         print(valid_acc)
         # auc 
-        auc = metrics.roc_auc_score(outputs, targets)
+        auc = metrics.roc_auc_score(np.concatenate(outputs), np.concatenate(targets))
         # self.report(all_losses, all_acc, valid_acc, epoch, time.time() - s_time)
         # Calculate accuracy for each class based on the argmax of the output
         
