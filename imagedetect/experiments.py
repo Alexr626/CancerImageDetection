@@ -156,8 +156,8 @@ def expResnet18Trans(data_path):
         return model, optm
 
     kfold(data_path,
-          256,
-          500,
+          128,
+          50,
           model_optimizer=model_opt,
           loss=nn.CrossEntropyLoss(),
           name='Resnet18Trans',

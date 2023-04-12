@@ -87,7 +87,7 @@ class Trainer:
                    "epoch": epoch,
                     "train_acc": tr_accuacy,
                     "valid_acc": valid_acc,
-                    "duration": time.time() - s_time
+                    "duration": time.time() - s_time,
                     "auc": auc
                    })
 

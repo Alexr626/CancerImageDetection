@@ -72,7 +72,9 @@ def kfold(src_path,
     tr.run() 
     # run prediction on test set and get metrics
     pred, target = tr.predict()
-    matrix = metrics.confusion_matrix(target, pred)
+    # get argmax of predictions
+    preds = pred.argmax(dim=1)
+    matrix = metrics.confusion_matrix(target, preds)
     print(matrix)
 
 
