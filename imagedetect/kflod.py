@@ -91,7 +91,7 @@ def kfold(src_path,
         k = np.argmax(cumulative_probabilities >= level)
         interval = sorted_labels[: k + 1]
 
-        return interval
+        return interval.tolist()
     # Get confusion matrix with 80% prediction interval
     def get_confusion_matrix_intervals(pred, target,level=0.8):
 
@@ -99,7 +99,7 @@ def kfold(src_path,
         pred_intervals = [multi_class_prediction_intervals(p, level=level) for p in pred]
 
             # Extract unique class labels from the intervals
-        unique_labels = sorted(set.union(*[set(interval) for interval in pred_intervals] + [set(target)]))
+        unique_labels = sorted(set.union(*[set(interval) for interval in pred_intervals] + [set(target.tolist())]))
 
         # Initialize confusion matrix as nested dictionaries
         matrix = {label: {label: 0 for label in unique_labels} for label in unique_labels}
