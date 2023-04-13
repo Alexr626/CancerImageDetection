@@ -75,9 +75,36 @@ def kfold(src_path,
     # get argmax of predictions
     preds = pred.argmax(dim=1)
     matrix = metrics.confusion_matrix(target, preds)
-    
+    predvec = pred.cpu()
     print(matrix)
 
+    def multi_class_prediction_intervals(probability_vector, level=0.8):
+        # Sort categories and probabilities in descending order of probabilities
+        category_labels = np.arange(len(probability_vector))
+        sorted_indices = np.argsort(-probability_vector)
+        sorted_labels = category_labels[sorted_indices]
+        sorted_probabilities = probability_vector[sorted_indices]
+
+        # Calculate cumulative probabilities
+        cumulative_probabilities = np.cumsum(sorted_probabilities)
+
+        # Find the prediction interval
+        k = np.argmax(cumulative_probabilities >= level)
+        interval = sorted_labels[: k + 1]
+
+        return interval
+    # Get confusion matrix with 80% prediction interval
+    def get_confusion_matrix(pred, target, level=0.8):
+        # Get the prediction intervals for each sample
+        pred_intervals = [multi_class_prediction_intervals(p, level=level) for p in pred]
+        # Get the confusion matrix
+        matrix = metrics.confusion_matrix(target, pred_intervals)
+        return matrix
+    
+    matrixInterval = get_confusion_matrix(predvec, target, level=0.8)
+    matrixInterval50  = get_confusion_matrix(predvec, target, level=0.5)
+    print(matrixInterval)
+    print(matrixInterval50)
 
     #pred, target = tr.predict()
     #all_pred[i:i+pred.shape[0]] = pred
