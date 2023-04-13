@@ -75,7 +75,6 @@ def kfold(src_path,
     # get argmax of predictions
     preds = pred.argmax(dim=1)
     matrix = metrics.confusion_matrix(target, preds)
-    predvec = pred.cpu()
     print(matrix)
 
     def multi_class_prediction_intervals(probability_vector, level=0.8):
@@ -101,8 +100,9 @@ def kfold(src_path,
         matrix = metrics.confusion_matrix(target, pred_intervals)
         return matrix
     
-    matrixInterval = get_confusion_matrix(predvec, target, level=0.8)
-    matrixInterval50  = get_confusion_matrix(predvec, target, level=0.5)
+    # Get confusion matrix 
+    matrixInterval = get_confusion_matrix(pred, target, level=0.8)
+    matrixInterval50  = get_confusion_matrix(pred, target, level=0.5)
     print(matrixInterval)
     print(matrixInterval50)
 
