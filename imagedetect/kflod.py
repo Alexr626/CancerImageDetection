@@ -113,7 +113,7 @@ def kfold(src_path,
 
 
             # Convert the nested defaultdict to a Pandas DataFrame
-        df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
+        df_matrix = pd.DataFrame(matrix).transpose().fillna(0, inplace=True).astype(int)
 
         # Sort rows and columns by index
         df_matrix = df_matrix.sort_index(axis=0).sort_index(axis=1)
@@ -127,9 +127,9 @@ def kfold(src_path,
     matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
     matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
     print("80% prediction interval")
-    print(matrixInterval)
+    print(matrixInterval.to_string())
     print("50% prediction interval")
-    print(matrixInterval50)
+    print(matrixInterval50.to_string())
 
 
 
