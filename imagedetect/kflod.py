@@ -93,24 +93,31 @@ def kfold(src_path,
 
         return interval
     # Get confusion matrix with 80% prediction interval
-    def get_confusion_matrix_intervals(pred, target, num_classes, level=0.8):
-        # Initialize confusion matrix with zeros
-        matrix = np.zeros((num_classes, num_classes), dtype=int)
+    def get_confusion_matrix_intervals(pred, target,level=0.8):
 
         # Get the prediction intervals for each sample
         pred_intervals = [multi_class_prediction_intervals(p, level=level) for p in pred]
 
+            # Extract unique class labels from the intervals
+        unique_labels = sorted(set.union(*[set(interval) for interval in pred_intervals] + [set(target)]))
+
+        # Initialize confusion matrix as nested dictionaries
+        matrix = {label: {label: 0 for label in unique_labels} for label in unique_labels}
+
         # Update confusion matrix
         for i in range(len(target)):
-            for pred_class in pred_intervals[i]:
-                matrix[target[i], pred_class] += 1
+            for pred_label in pred_intervals[i]:
+                matrix[target[i]][pred_label] += 1
 
         return matrix
     
 
     # Get confusion matrix 
-    matrixInterval = get_confusion_matrix_intervals(pred, target,3 ,level=0.8)
-    matrixInterval50  = get_confusion_matrix_intervals(pred, target, 3, level=0.5)
+    # Change target to numpy array with int
+    target = target.cpu().numpy().astype(int)
+
+    matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
+    matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
     print(matrixInterval)
     print(matrixInterval50)
 
