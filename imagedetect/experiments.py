@@ -158,7 +158,7 @@ def expResnet18Trans(data_path):
 
     kfold(data_path,
           256,
-          500,
+          10,
           model_optimizer=model_opt,
           loss=nn.BCELoss(),
           name='Resnet18Trans',
