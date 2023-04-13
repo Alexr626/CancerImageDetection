@@ -107,8 +107,8 @@ def kfold(src_path,
 
         # Update confusion matrix
         for i in range(len(target)):
-            print(target[i])
-            print(pred_intervals[i])
+            #print(target[i])
+            # print(pred_intervals[i])
             matrix[tuple(list(target[i]))][tuple(pred_intervals[i])] += 1
 
 
