@@ -99,7 +99,7 @@ def kfold(src_path,
         pred_intervals = [multi_class_prediction_intervals(p, level=level) for p in pred]
 
             # Extract unique class labels from the intervals
-        unique_labels = sorted(set.union(*[set(tuple(interval)) for interval in pred_intervals] + [set(tuple(target.tolist()))]))
+        unique_labels = sorted(set.union(*[set(single for single in interval) for interval in pred_intervals] + [set(target.astype('int').tolist())]))
 
         # Initialize confusion matrix as nested dictionaries
         matrix = {label: {label: 0 for label in unique_labels} for label in unique_labels}
