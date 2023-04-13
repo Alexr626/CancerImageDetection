@@ -91,7 +91,7 @@ def kfold(src_path,
         k = np.argmax(cumulative_probabilities >= level)
         interval = sorted_labels[: k + 1]
 
-        return interval.tolist()
+        return sorted(interval.tolist())
     # Get confusion matrix with 80% prediction interval
     def get_confusion_matrix_intervals(pred, target,level=0.8):
 
