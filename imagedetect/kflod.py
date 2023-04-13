@@ -7,7 +7,7 @@ import numpy as np
 import random
 from sklearn import metrics
 from os import path
-
+from collections import defaultdict
 def get_metrics(target, pred):
     prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred, average='weighted')
     fpr, tpr, thresholds = metrics.roc_curve(target, pred)
@@ -102,7 +102,7 @@ def kfold(src_path,
         unique_labels = sorted(list(set(tuple(interval) for interval in pred_intervals)))
 
         # Initialize confusion matrix as nested dictionaries
-        matrix = {label: {label: 0 for label in unique_labels} for label in unique_labels}
+        matrix = defaultdict(lambda: defaultdict(tuple))
 
         # Update confusion matrix
         for i in range(len(target)):
