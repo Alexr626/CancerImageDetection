@@ -128,9 +128,9 @@ def kfold(src_path,
     matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
     matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
     print("80% prediction interval")
-    print(matrixInterval.to_string())
+    print(matrixInterval)
     print("50% prediction interval")
-    print(matrixInterval50.to_string())
+    print(matrixInterval50)
 
 
 
