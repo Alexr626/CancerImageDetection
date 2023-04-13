@@ -92,6 +92,14 @@ def map_malignancy_th(malignancy):
     elif malignancy >= 3:
         return 1
 
+def map_malignancy_response(malignancy):
+    if malignancy >= 3.5:
+        return  2
+    elif malignancy <= 2:
+        return  0
+    else:
+        return  1
+    
 
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
@@ -101,7 +109,8 @@ def get_dataset(dir):
     #create malignanc_th response variable
     df_train['malignancy_th'] = df_train.malignancy.map(map_malignancy_th)
     df_test['malignancy_th'] = df_test.malignancy.map(map_malignancy_th)
-
+    df_train['malignancy_response'] = df_train.malignancy.map(map_malignancy_response)
+    df_test['malignancy_response'] = df_test.malignancy.map(map_malignancy_response)
 
     num_data = len(df_train)
     aug_size = 3
