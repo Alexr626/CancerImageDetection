@@ -113,12 +113,13 @@ def kfold(src_path,
 
 
             # Convert the nested defaultdict to a Pandas DataFrame
+        # Convert to Pandas DataFrame
         df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
 
-        # Sort rows and columns by index
-        df_matrix = df_matrix.sort_index(axis=0).sort_index(axis=1)
+        # Convert to numpy array
+        confusion_matrix = df_matrix.values
 
-        return df_matrix
+        return confusion_matrix
 
     # Get confusion matrix 
     # Change target to numpy array with int
