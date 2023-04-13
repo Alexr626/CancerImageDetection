@@ -113,7 +113,7 @@ def kfold(src_path,
 
 
             # Convert the nested defaultdict to a Pandas DataFrame
-        df_matrix = pd.DataFrame(matrix).transpose().fillna(0, inplace=True).astype(int)
+        df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
 
         # Sort rows and columns by index
         df_matrix = df_matrix.sort_index(axis=0).sort_index(axis=1)
