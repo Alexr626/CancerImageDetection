@@ -8,6 +8,7 @@ import random
 from sklearn import metrics
 from os import path
 from collections import defaultdict
+import pandas as pd
 def get_metrics(target, pred):
     prec, recall, _, _ = metrics.precision_recall_fscore_support(target, pred, average='weighted')
     fpr, tpr, thresholds = metrics.roc_curve(target, pred)
@@ -110,8 +111,14 @@ def kfold(src_path,
             print(pred_intervals[i])
             matrix[tuple(list(target[i]))][tuple(pred_intervals[i])] += 1
 
-        return matrix
-    
+
+            # Convert the nested defaultdict to a Pandas DataFrame
+        df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
+
+        # Sort rows and columns by index
+        df_matrix = df_matrix.sort_index(axis=0).sort_index(axis=1)
+
+        return df_matrix
 
     # Get confusion matrix 
     # Change target to numpy array with int
