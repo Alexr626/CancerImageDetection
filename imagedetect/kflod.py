@@ -109,8 +109,8 @@ def kfold(src_path,
     
 
     # Get confusion matrix 
-    matrixInterval = get_confusion_matrix_intervals(pred, target, level=0.8)
-    matrixInterval50  = get_confusion_matrix_intervals(pred, target, level=0.5)
+    matrixInterval = get_confusion_matrix_intervals(pred, target,3 ,level=0.8)
+    matrixInterval50  = get_confusion_matrix_intervals(pred, target, 3, level=0.5)
     print(matrixInterval)
     print(matrixInterval50)
 
