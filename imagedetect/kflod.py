@@ -132,6 +132,7 @@ def kfold(src_path,
     # Change target to numpy array with int
     
     target = target.cpu().numpy().astype(int)
+    print(coverage_rate([multi_class_prediction_intervals(p, level=.5) for p in pred], target))
     print(coverage_rate([multi_class_prediction_intervals(p, level=.8) for p in pred], target))
     matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
     matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
