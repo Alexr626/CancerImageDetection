@@ -114,17 +114,25 @@ def kfold(src_path,
 
             # Convert the nested defaultdict to a Pandas DataFrame
         # Convert to Pandas DataFrame
-        df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
+        #df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
 
         # Convert to numpy array
-        confusion_matrix = df_matrix.values
+        #confusion_matrix = df_matrix.values
 
-        return confusion_matrix
+        return matrix
+    # Function to calculate the coverage rate of the prediction intervals (the percentage of samples that are covered by the prediction interval)
+    def coverage_rate(pred_intervals, target):
+        # Calculate the coverage rate
+        coverage = sum([1 if target[i] in pred_intervals[i] else 0 for i in range(len(target))]) / len(target)
+
+        return coverage
+    
 
     # Get confusion matrix 
     # Change target to numpy array with int
+    
     target = target.cpu().numpy().astype(int)
-
+    print(coverage_rate([multi_class_prediction_intervals(p, level=.8) for p in pred], target))
     matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
     matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
     print("80% prediction interval")
