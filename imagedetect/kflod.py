@@ -119,32 +119,14 @@ def kfold(src_path,
 
     matrixInterval = get_confusion_matrix_intervals(pred, target,level=0.8)
     matrixInterval50  = get_confusion_matrix_intervals(pred, target,level=0.5)
+    print("80% prediction interval")
     print(matrixInterval)
+    print("50% prediction interval")
     print(matrixInterval50)
 
-    #pred, target = tr.predict()
-    #all_pred[i:i+pred.shape[0]] = pred
-    #all_targets[i:i+target.shape[0]] = target.view(-1)
-    #i += target.shape[0]
 
-    #prec, recall, auc = get_metrics(target, pred)
-    #print(f'AUC: {auc}, precision: {prec}, Recall: {recall}')
-    #f.write(f'AUC: {auc}, precision: {prec}, Recall: {recall}\n')
 
     del tr
-
-
-    #matches = calc_accuracy(all_pred, all_targets)
-    #acc = matches.float().mean()
-    #all_pred = all_pred.numpy()
-    #all_targets = all_targets.numpy()
-
-    #prec, recall, auc = get_metrics(all_targets, all_pred)
-    #print(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
-    #f.write(f'Accuracy: {acc}, AUC: {auc}, Precision: {prec}, Recall: {recall}')
-    #result = {'all_pred': all_pred, 'all_targets': all_targets}
-    #T.save(result, path.join('results',f'{name}_result'))
-    #f.close()
 
 
 
