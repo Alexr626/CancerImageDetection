@@ -99,26 +99,12 @@ def kfold(src_path,
         # Get the prediction intervals for each sample
         pred_intervals = [multi_class_prediction_intervals(p, level=level) for p in pred]
         
-            # Extract unique class labels from the intervals
-        unique_labels = sorted(list(set(tuple(interval) for interval in pred_intervals)))
-
         # Initialize confusion matrix as nested dictionaries
         matrix = defaultdict(lambda: defaultdict(int))
 
         # Update confusion matrix
         for i in range(len(target)):
-            #print(target[i])
-            # print(pred_intervals[i])
             matrix[tuple(list(target[i]))][tuple(pred_intervals[i])] += 1
-
-
-            # Convert the nested defaultdict to a Pandas DataFrame
-        # Convert to Pandas DataFrame
-        #df_matrix = pd.DataFrame(matrix).transpose().fillna(0).astype(int)
-
-        # Convert to numpy array
-        #confusion_matrix = df_matrix.values
-
         return matrix
     # Function to calculate the coverage rate of the prediction intervals (the percentage of samples that are covered by the prediction interval)
     def coverage_rate(pred_intervals, target):

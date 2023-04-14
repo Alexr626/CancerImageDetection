@@ -9,7 +9,9 @@ from torch.utils.data import TensorDataset
 from os import path
 
 img_size = 32
-
+# Image augmentation class
+# Input: hflip, rotate, blurring
+# Output: augmented image
 class Augmenter:
     def __init__(self, hflip=True, rotate=True, blurring=False):
         self.hflip = hflip
@@ -40,7 +42,7 @@ def resize(im):
     im = im.crop((8, 8, 40, 40))
     return im
 
-
+# Generate dataset function, generates images from the processed npy files
 def generate_dataset(dir):
     # Load in csv created in LIDC.py
     df = pd.read_csv(dir+'/labels.csv')
@@ -85,14 +87,16 @@ def map_malignancy_th(malignancy):
         return  0
     else:
         return  1
-    
+# Get datset function to load in data
+# Input: directory of data
+# Output: trainset, testsset    
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     # Create label that is 0 if maligancy < 3, 1 if maligancy = 3, 2 if maligancy > 3
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
 
-
+    # Augment data
     num_data = len(df_train)
     aug_size = 3
     x = t.zeros((num_data * aug_size, 1, img_size, img_size))
@@ -129,7 +133,9 @@ def get_dataset(dir):
     testset = TensorDataset(x, y)
 
     return trainset, testset
-
+# Get datset function to load in data for ResNet
+# Input: directory of data
+# Output: trainset, testsset
 def get_dataset3d(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     df_test = df[df.testing==1]

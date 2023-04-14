@@ -5,7 +5,9 @@ import time
 from sklearn import metrics
 from os import path
 import wandb
-
+'''
+Trainer class for training models
+'''
 class Trainer:
     def __init__(self, training_set,
                  validation_set,
@@ -44,7 +46,7 @@ class Trainer:
 
         })
 
-
+    # Train a single epoch  
     def train_epoch(self, epoch):
         s_time = time.time()
         self.model.train()
@@ -115,7 +117,7 @@ class Trainer:
         print(msg)
         self.log += msg + '\n'
 
-
+    # Predict on the validation set
     def predict(self):
         self.model.eval()
         all_pred = T.zeros(len(self.valid_dataset.dataset), 3)
@@ -134,13 +136,14 @@ class Trainer:
         # print(all_pred, all_targets)
         return all_pred, all_targets
 
-
+    # Validate the model on the validation set
     def validate(self):
         all_pred, all_targets = self.predict()
         # print(all_pred, all_targets)
         matches = self.calc_accuracy(all_pred, all_targets)
         return matches
-
+    
+    # Calculate the accuracy of the model
     def calc_accuracy(self, output, target):
         # Check that the argmax of softmax is the same as the target
         #print(output.data)
@@ -151,7 +154,7 @@ class Trainer:
         # calculate the accuracy as the percentage of correct predictions
         accuracy = correct.float().mean()
         return accuracy
-
+    # 
     def run(self):
         start_t = time.time()
         for epoch in range(self.n_epochs):

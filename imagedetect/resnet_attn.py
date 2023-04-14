@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch as T
+''''
+Script containg all the models used in the project
 
+'''
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
