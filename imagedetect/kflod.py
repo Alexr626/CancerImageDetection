@@ -111,9 +111,9 @@ def kfold(src_path,
         # Calculate the coverage rate
         # GO through each of the unique classes and calculate the coverage rate for each class
         coverage = []
-        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
-        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
-        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
+        coverage.append(sum([1 if int(0) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
+        coverage.append(sum([1 if int(1) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
+        coverage.append(sum([1 if int(2) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
 
         return coverage
     
