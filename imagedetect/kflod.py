@@ -109,7 +109,11 @@ def kfold(src_path,
     # Function to calculate the coverage rate of the prediction intervals (the percentage of samples that are covered by the prediction interval)
     def coverage_rate(pred_intervals, target):
         # Calculate the coverage rate
-        coverage = sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / len(target)
+        # GO through each of the unique classes and calculate the coverage rate for each class
+        coverage = []
+        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
+        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
+        coverage.append(sum([1 if int(target[i]) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
 
         return coverage
     
