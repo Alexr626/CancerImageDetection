@@ -40,8 +40,6 @@ def kfold(src_path,
           dataset_func=get_dataset):
 
     print(f'Experiment {name}')
-    all_pred = T.zeros(849)
-    all_targets = T.zeros(849)
     i = 0
     f = open(path.join('results', f'{name}.txt'), 'w')
     f.write(f'{batch_size} {n_epochs} {model_optimizer}\n')
@@ -111,9 +109,28 @@ def kfold(src_path,
         # Calculate the coverage rate
         # GO through each of the unique classes and calculate the coverage rate for each class
         coverage = []
-        coverage.append(sum([1 if int(0) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
-        coverage.append(sum([1 if int(1) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
-        coverage.append(sum([1 if int(2) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
+        # get all target values that are 0, and z
+       
+        #coverage.append(sum([1 if target[i] in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
+        #coverage.append(sum([1 if int(1) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
+        #coverage.append(sum([1 if int(2) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
+        coverage0 = 0
+        coverage1 = 0
+        coverage2 = 0
+        for i in range(len(target)):
+            if target[i] == 0:
+                if 0 in pred_intervals[i]:
+                    coverage0 += 1
+            if target[i] == 1:
+                if 1 in pred_intervals[i]:
+                    coverage1 += 1
+            if target[i] == 2:
+                if 2 in pred_intervals[i]:
+                    coverage2 += 1
+        coverage.append(coverage0 / np.count_nonzero(target == 0))
+        coverage.append(coverage1 / np.count_nonzero(target == 1))
+        coverage.append(coverage2 / np.count_nonzero(target == 2))
+        
 
         return coverage
     
