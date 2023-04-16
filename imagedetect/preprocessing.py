@@ -152,6 +152,7 @@ def get_dataset3d(dir):
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
+    # Loop through each image
     for i, row in df_train.iterrows():
         id = int(row.id)
         for j in range(aug_size):
