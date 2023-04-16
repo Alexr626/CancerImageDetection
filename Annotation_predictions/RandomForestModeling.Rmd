@@ -1,0 +1,293 @@
+---
+title: "RandomForestModeling"
+author: "Ken Mawer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, include=FALSE}
+library(tidyverse)
+library(maptree)
+library(rpart.plot)
+library(randomForest)
+library(caret)
+```
+
+```{r get_data, include = FALSE}
+# Get datasets
+train <- read_csv("../Data/Meta/meta_annotation_info_train.csv")
+holdo <- read_csv("../Data/Meta/meta_annotation_info_test.csv")
+
+# Remove response variables and other irrelevant variables
+process <- function(dataset) {
+  dplyr::select(dataset,-Malignancy,-Malignancy_median_high,-Malignancy_median,-Malignancy_mean,-Malignancy_mode,-Malignancy_entropy,-Patient_id,-Nodule_no,-Nodule_id,-Annotation_no, -starts_with("Internal"),-Calcification_entropy,-Calcification_mean,-Calcification_median,-Calcification_median_high) %>%
+    mutate(Is_cancer = as_factor(Is_cancer),Calcification = as_factor(Calcification),
+           Calcification_mode = as_factor(Calcification_mode))
+}
+
+t <- process(train)
+h <- process(holdo)
+# Fixes missing factor levels
+# Refer to https://stackoverflow.com/questions/24829674/r-random-forest-error-type-of-predictors-in-new-data-do-not-match
+h <- rbind(t[1,],h)[-1,]
+```
+
+```{r analysis, include=FALSE}
+# Exploratory data analysis
+summary(train)
+```
+
+```{r tree, echo=FALSE}
+set.seed(123)
+tr <- tree::tree(Is_cancer~.,data=t)
+rpart.plot(rpart(Is_cancer~.,data=t))
+```
+
+```{r accuracy_rate, include=FALSE}
+# Accuracy rate function
+# Inputs:
+#   rf: A random forest model
+#   dataset: The dataset
+# Return:
+#   A number between 0 and 1 of the proportion of correct classifications
+rf_acc_rate <- function(rf,dataset) {
+  pr <- predict(rf,dataset) == dataset$Is_cancer
+  length(pr[pr]) / length(pr)
+}
+```
+
+```{r, calc_error, echo=FALSE}
+set.seed(123)
+tx <- 1:nrow(t)
+split1 <- tx[1:floor(nrow(t)/3)]
+split2 <- tx[(floor(nrow(t)/3)+1):floor(2*nrow(t)/3)]
+split3 <- tx[(floor(2*nrow(t)/3)+1):nrow(t)]
+t1 <- t[-split1,];t2 <- t[-split2,];t3 <- t[-split3,]
+h1 <- t[split1,]; h2 <- t[split2,]; h3 <- t[split3,]
+
+mt <- c(38,19,9,4,2)
+ns <- c(400,200,100,50,10,1)
+
+ha1 <- c(); ha2 <- c(); ha3 <- c(); it <- c()
+for (i in mt) {
+  for (j in ns) {
+    ha1 <- c(ha1,rf_acc_rate(randomForest(Is_cancer~.,data=t1,mtry = i,nodesize = j),h1))
+    ha2 <- c(ha2,rf_acc_rate(randomForest(Is_cancer~.,data=t2,mtry = i,nodesize = j),h2))
+    ha3 <- c(ha3,rf_acc_rate(randomForest(Is_cancer~.,data=t3,mtry = i,nodesize = j),h3))
+    it <- c(it,paste(i,j))
+  }
+}
+mean_holdout_accuracy <- matrix((ha1+ha2+ha3)/3,nrow=6)
+rownames(mean_holdout_accuracy) <- ns
+colnames(mean_holdout_accuracy) <- mt
+
+```
+
+```{r bestrf}
+set.seed(123)
+bestrf <- randomForest(Is_cancer~.,data=t,mtry = 9,nodesize = 10)
+rf_acc_rate(bestrf,h)
+```
+
+I used the holdout method as the cross-validation error gave suggested I use a model that would result in lower holdout accuracy.
+
+```{r interval_score,echo=FALSE}
+# From Harry Joe's website
+CategoryPredInterval = function(ProbMatrix, labels) {
+  ncases = nrow(ProbMatrix)
+  pred50 = rep(NA,ncases); pred80 = rep(NA,ncases)
+  for(i in 1:ncases) {
+    p = ProbMatrix[i,]
+    ip = order(p,decreasing=T)
+    pOrdered = p[ip] # decreasing order
+    labelsOrdered = labels[ip] # decreasing order
+    G = cumsum(pOrdered) # cumulative sum from largest
+    k1 = min(which(G>=0.5)) # level1= 0.5
+    k2 = min(which(G>=0.8)) # level2= 0.8
+    pred1 = labelsOrdered[1:k1]; pred2 = labelsOrdered[1:k2]
+    pred50[i] = paste(pred1,collapse="")
+    pred80[i] = paste(pred2,collapse="")
+  }
+  list(pred50=pred50, pred80=pred80)
+}
+
+preds_probs <- bestrf %>%
+  predict(newdata=h,type="prob") %>%
+  as_tibble() %>%
+  rename(T = True, F = False, N = No_consensus, A = Ambiguous) %>%
+  as.matrix()
+```
+
+```{r coverage, echo = FALSE}
+# Grabs the predicted probabilities
+preds_probs2 <- bestrf %>%
+  predict(newdata=h,type="prob") %>%
+  as_tibble() %>%
+  as.matrix()
+```
+
+Most important variables:
+
+```{r variables, echo=FALSE}
+# Grabs the most important variables by MeanDecreaseGini, with the most
+# important variables being first
+vars <- as.data.frame(bestrf$importance)
+vars_important <- arrange(vars,desc(MeanDecreaseGini))
+
+vars2 <- filter(vars_important,MeanDecreaseGini>=50)
+
+vec <- rownames(vars2)
+```
+
+Updated function for prediction intervals:
+```{r predint, include=FALSE}
+# Calculates prediction intervals of each nodules in the dataset
+# Inputs:
+#   ProbMatrix: Each row is a probability vector of each response class for a given annotation
+#   Labels: vector of names of response classes (in same order as columns of the ProbMatrix)
+# Return:
+#   pred50 has 50% prediction intervals
+#   pred80 has 80% prediction intervals
+
+CategoryPredIntervalNodules = function(ProbMatrix, labels) { 
+  test_annotation <- read.csv("../Data/Meta/meta_annotation_info_test.csv", header = TRUE)
+
+  nannotations = nrow(ProbMatrix)
+  nodule_id = test_annotation$Nodule_id
+  n_nodules = length(unique(nodule_id))
+  pred50 = rep(NA,n_nodules); pred80 = rep(NA,n_nodules)
+
+  nodule_count = 1
+  c = 1
+  num_annotations = 0
+  psum = 0
+  curr_nodule_id = nodule_id[1]
+  for(i in 1:nannotations){
+    if (i != nannotations) {
+      c = c + 1
+      curr_nodule_id = nodule_id[c]
+      num_annotations = num_annotations + 1
+      psum = psum + ProbMatrix[i,]
+    }
+    if (nodule_id[i] != curr_nodule_id) {
+      psum_avg = psum / num_annotations
+      print(psum_avg)
+      
+      ip = order(psum_avg,decreasing=T)
+      pOrdered = psum_avg[ip] # decreasing order
+      labelsOrdered = labels[ip] # decreasing order
+      G = cumsum(pOrdered) # cumulative sum from largest
+      k1 = min(which(G>=0.5)) # level1= 0.5
+      k2 = min(which(G>=0.8)) # level2= 0.8
+      pred1 = labelsOrdered[1:k1]; pred2 = labelsOrdered[1:k2]
+      pred50[nodule_count] = paste(pred1,collapse="")
+      pred80[nodule_count] = paste(pred2,collapse="") 
+      
+      psum = 0
+      num_annotations = 0
+      nodule_count = nodule_count + 1
+    }
+  }
+  list(pred50=pred50, pred80=pred80)
+}
+
+predintRF = CategoryPredIntervalNodules(preds_probs, labels=c("A","F","N","T"))
+
+
+# Input:
+#   pred_intervals: One of the two objects (pred50 or pred80) outputted by CategoryPredIntervalNodules()
+#   is_50_percent: TRUE if pred50, FALSE if pred80
+# Output:
+#   A list containing the coverage rates of each class in the order: true, false, ambiguous, no consensus
+
+getCoverageRateNodule = function(pred_intervals,is_50_percent = FALSE) {
+  test_nodule <- read.csv("../Data/Meta/meta_nodule_info_test.csv", header = TRUE)
+  observed = test_nodule$Is_cancer
+  observed = as.character(observed)
+  
+  n = nrow(test_nodule)
+  n_true = nrow(subset(test_nodule, Is_cancer == "True"))
+  n_false = nrow(subset(test_nodule, Is_cancer == "False"))
+  n_ambiguous = nrow(subset(test_nodule, Is_cancer == "Ambiguous"))
+  n_no_consensus = nrow(subset(test_nodule, Is_cancer == "No_consensus"))
+  
+  #Change this line to get 80% intervals
+  pred_intervals_confidence = if (is_50_percent) {
+    pred_intervals$pred50
+  } else {
+    pred_intervals$pred80
+  }
+  coverage_rate_true = 0
+  coverage_rate_false = 0
+  coverage_rate_ambiguous = 0
+  coverage_rate_no_consensus = 0
+  
+  skipped = 0
+  
+  for (i in 1:n) {
+    if(!grepl(observed[i], pred_intervals_confidence[i], fixed=TRUE)){
+      next
+    }
+    if(observed[i] == "True") {
+      coverage_rate_true = coverage_rate_true + 1
+    } else if(observed[i] == "False") {
+      coverage_rate_false = coverage_rate_false + 1
+    } else if(observed[i] == "Ambiguous") {
+      coverage_rate_ambiguous = coverage_rate_ambiguous + 1
+    } else {
+      coverage_rate_no_consensus = coverage_rate_no_consensus + 1
+    }
+  }
+
+  coverage_rate_true = coverage_rate_true / n_true
+  coverage_rate_false = coverage_rate_false / n_false
+  coverage_rate_ambiguous = coverage_rate_ambiguous / n_ambiguous
+  coverage_rate_no_consensus = coverage_rate_no_consensus / n_no_consensus
+  
+  list(coverage_rate_true, coverage_rate_false, coverage_rate_ambiguous, coverage_rate_no_consensus)
+}
+
+lapply(getCoverageRateNodule(predintRF,TRUE),round,4)
+lapply(getCoverageRateNodule(predintRF,FALSE),round,4)
+```
+
+```{r, overall_coverage_rate, echo = FALSE}
+# Input:
+#   pred_intervals: One of the two objects (pred50 or pred80) outputted by CategoryPredIntervalNodules()
+# Output:
+#   A list containing the coverage rate
+
+getOverallCoverageRateNodule = function(pred_intervals) {
+  test_nodule <- read.csv("../Data/Meta/meta_nodule_info_test.csv", header = TRUE)
+  observed = test_nodule[c("Is_cancer")]
+  
+  #Change these two lines to get 80% intervals
+  n = length(pred_intervals$pred80)
+  pred_intervals_confidence = pred_intervals$pred80
+  
+  coverage_rate = 0
+  for (i in 1:(n-1)){
+    if(grepl(observed[i, ], pred_intervals_confidence[i], fixed=TRUE)) {
+      #print(observed[i,])
+      #print(pred_intervals_confidence[i])
+      coverage_rate = coverage_rate + 1
+    }
+  }
+  coverage_rate = coverage_rate / n
+  list(coverage_rate)
+}
+
+getOverallCoverageRateNodule(predintRF)
+```
+
+```{r table, echo=FALSE}
+tx <- mutate(read_csv("../Data/Meta/meta_nodule_info_test.csv"),Is_cancer = recode(Is_cancer,True="T",False="F",No_consensus="N",Ambiguous="A"))
+
+cpi <- CategoryPredInterval(preds_probs,c("T","F","N","A"))
+table(tx$Is_cancer, predintRF$pred50)
+table(tx$Is_cancer, predintRF$pred80)
+```

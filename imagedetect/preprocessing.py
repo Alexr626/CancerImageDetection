@@ -55,7 +55,6 @@ def generate_dataset(dir):
     augmenter = Augmenter(hflip=True, rotate=True, blurring=True)
     augmenter2 = Augmenter(hflip=False, rotate=False, blurring=False)
 
-
     for i, row in df.iterrows():
         voxels[int(row.id)] = np.load('{0}/{1:.0f}.npy'.format(dir,row.id))
 
@@ -192,5 +191,5 @@ def get_dataset3d(dir):
 if __name__ == '__main__':
     import sys
  
-    generate_dataset("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
+    generate_dataset("/Users/alex/dev/STAT 447B/Project/Data/Meta/vision_preprocess_output")
  
