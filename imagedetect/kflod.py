@@ -20,14 +20,14 @@ def calc_accuracy(x, y):
     # Check if the argmax index of the output matches the target
     matches = (x.argmax(dim=1) == y)
     return matches
-
+# Reset random seed
 def reset_rand():
     seed = 1000
     T.manual_seed(seed)
     T.cuda.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-
+# Training function
 def kfold(src_path,
           batch_size,
           n_epochs,
@@ -92,6 +92,11 @@ def kfold(src_path,
 
         return sorted(interval.tolist())
     # Get confusion matrix with 80% prediction interval
+    # Input: pred - list of predictions
+    #        target - list of target values
+    #        level - prediction interval level
+    # Output: matrix - confusion matrix with prediction intervals
+
     def get_confusion_matrix_intervals(pred, target,level=0.8):
 
         # Get the prediction intervals for each sample
@@ -105,15 +110,14 @@ def kfold(src_path,
             matrix[tuple(list(target[i]))][tuple(pred_intervals[i])] += 1
         return matrix
     # Function to calculate the coverage rate of the prediction intervals (the percentage of samples that are covered by the prediction interval)
+    # Input: pred_intervals - list of prediction intervals
+    #        target - list of target values
+    # Output: coverage - list of coverage rates for each class
     def coverage_rate(pred_intervals, target):
         # Calculate the coverage rate
         # GO through each of the unique classes and calculate the coverage rate for each class
         coverage = []
         # get all target values that are 0, and z
-       
-        #coverage.append(sum([1 if target[i] in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 0))
-        #coverage.append(sum([1 if int(1) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 1))
-        #coverage.append(sum([1 if int(2) in pred_intervals[i] else 0 for i in range(len(target))]) / np.count_nonzero(target == 2))
         coverage0 = 0
         coverage1 = 0
         coverage2 = 0
@@ -130,7 +134,6 @@ def kfold(src_path,
         coverage.append(coverage0 / np.count_nonzero(target == 0))
         coverage.append(coverage1 / np.count_nonzero(target == 1))
         coverage.append(coverage2 / np.count_nonzero(target == 2))
-        
 
         return coverage
     

@@ -43,6 +43,8 @@ def resize(im):
     return im
 
 # Generate dataset function, generates images from the processed npy files
+# Input: dir
+# Output: images, csv mapping images to labels
 def generate_dataset(dir):
     # Load in csv created in LIDC.py
     df = pd.read_csv(dir+'/labels.csv')
@@ -79,7 +81,9 @@ def generate_dataset(dir):
                 im2 = resize(im)
                 im2.save('{0}{1:.0f}.{2}.png'.format(folder, row.id, e))
         
-
+# Map malignancy function
+# Input: malignancy
+# Output: 0, 1, 2
 def map_malignancy_th(malignancy):
     if malignancy >= 3.5:
         return  2
