@@ -75,7 +75,9 @@ def kfold(src_path,
     preds = pred.argmax(dim=1)
     matrix = metrics.confusion_matrix(target, preds)
     print(matrix)
-
+    # Input: probability_vector - vector of probabilities for each class
+    #        level - prediction interval level
+    # Output: interval - prediction interval
     def multi_class_prediction_intervals(probability_vector, level=0.8):
         # Sort categories and probabilities in descending order of probabilities
         category_labels = np.arange(len(probability_vector))
