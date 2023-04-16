@@ -9,7 +9,9 @@ from torch.utils.data import TensorDataset
 from os import path
 
 img_size = 32
-
+# Image augmentation class
+# Input: hflip, rotate, blurring
+# Output: augmented image
 class Augmenter:
     def __init__(self, hflip=True, rotate=True, blurring=False):
         self.hflip = hflip
@@ -40,7 +42,9 @@ def resize(im):
     im = im.crop((8, 8, 40, 40))
     return im
 
-
+# Generate dataset function, generates images from the processed npy files
+# Input: dir
+# Output: images, csv mapping images to labels
 def generate_dataset(dir):
     # Load in csv created in LIDC.py
     df = pd.read_csv(dir+'/labels.csv')
@@ -50,7 +54,6 @@ def generate_dataset(dir):
     # Augmenter for training data
     augmenter = Augmenter(hflip=True, rotate=True, blurring=True)
     augmenter2 = Augmenter(hflip=False, rotate=False, blurring=False)
-
 
     for i, row in df.iterrows():
         voxels[int(row.id)] = np.load('{0}/{1:.0f}.npy'.format(dir,row.id))
@@ -77,7 +80,9 @@ def generate_dataset(dir):
                 im2 = resize(im)
                 im2.save('{0}{1:.0f}.{2}.png'.format(folder, row.id, e))
         
-
+# Map malignancy function
+# Input: malignancy
+# Output: 0, 1, 2
 def map_malignancy_th(malignancy):
     if malignancy >= 3.5:
         return  2
@@ -85,14 +90,16 @@ def map_malignancy_th(malignancy):
         return  0
     else:
         return  1
-    
+# Get datset function to load in data
+# Input: directory of data
+# Output: trainset, testsset    
 def get_dataset(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     # Create label that is 0 if maligancy < 3, 1 if maligancy = 3, 2 if maligancy > 3
     df_test = df[df.testing==1]
     df_train = df[df.testing == 0]
 
-
+    # Augment data
     num_data = len(df_train)
     aug_size = 3
     x = t.zeros((num_data * aug_size, 1, img_size, img_size))
@@ -129,7 +136,9 @@ def get_dataset(dir):
     testset = TensorDataset(x, y)
 
     return trainset, testset
-
+# Get datset function to load in data for ResNet
+# Input: directory of data
+# Output: trainset, testsset
 def get_dataset3d(dir):
     df = pd.read_csv(path.join(dir, 'labels.csv'))
     df_test = df[df.testing==1]
@@ -142,6 +151,7 @@ def get_dataset3d(dir):
     x = t.zeros((num_data * aug_size, 3, img_size, img_size))
     y = t.zeros((num_data * aug_size, 1))
     c = 0
+    # Loop through each image
     for i, row in df_train.iterrows():
         id = int(row.id)
         for j in range(aug_size):
@@ -181,5 +191,5 @@ def get_dataset3d(dir):
 if __name__ == '__main__':
     import sys
  
-    generate_dataset("/Users/anamhira/Documents/UBC/Stat447B/CancerImageDetection/Data")
+    generate_dataset("/Users/alex/dev/STAT 447B/Project/Data/Meta/vision_preprocess_output")
  

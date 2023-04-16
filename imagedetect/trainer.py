@@ -5,7 +5,9 @@ import time
 from sklearn import metrics
 from os import path
 import wandb
-
+'''
+Trainer class for training models
+'''
 class Trainer:
     def __init__(self, training_set,
                  validation_set,
@@ -44,7 +46,7 @@ class Trainer:
 
         })
 
-
+    # Train a single epoch  
     def train_epoch(self, epoch):
         s_time = time.time()
         self.model.train()
@@ -91,31 +93,7 @@ class Trainer:
                     "auc": auc
                    })
 
-    def report(self, all_losses, all_acc, valid_acc, epoch, duration):
-        n_train = len(all_losses)
-        loss = np.sum(all_losses) / n_train
-
-        def summery(data):
-            n = 0.0
-            s_dist = 0
-            for dist in data:
-                s_dist += T.sum(dist)
-                n += len(dist)
-
-            return s_dist.float() / n
-
-        tr_dist = summery(all_acc)
-        va_dist = summery(valid_acc)
-
-        pred, target = self.predict()
-        # print(pred, target)
-        # auc = metrics.auc(fpr, tpr)
-
-        msg = f'epoch {epoch}: loss {loss:.3f} Tr Acc {tr_dist:.2f} Val Acc {va_dist:.2f} AUC {3:.2f} duration {duration:.2f}'
-        print(msg)
-        self.log += msg + '\n'
-
-
+    # Predict on the validation set
     def predict(self):
         self.model.eval()
         all_pred = T.zeros(len(self.valid_dataset.dataset), 3)
@@ -134,13 +112,17 @@ class Trainer:
         # print(all_pred, all_targets)
         return all_pred, all_targets
 
-
+    # Validate the model on the validation set
     def validate(self):
         all_pred, all_targets = self.predict()
         # print(all_pred, all_targets)
         matches = self.calc_accuracy(all_pred, all_targets)
         return matches
-
+    
+    # Calculate the accuracy of the model
+    # Input: output - the output of the model
+    #        target - the target of the model
+    # Output: accuracy - the accuracy of the model
     def calc_accuracy(self, output, target):
         # Check that the argmax of softmax is the same as the target
         #print(output.data)
@@ -151,7 +133,7 @@ class Trainer:
         # calculate the accuracy as the percentage of correct predictions
         accuracy = correct.float().mean()
         return accuracy
-
+    # Run the training
     def run(self):
         start_t = time.time()
         for epoch in range(self.n_epochs):

@@ -1,20 +1,15 @@
-import sys
 import os
-from pathlib import Path
-import glob
 from configparser import ConfigParser
 import pandas as pd
 import numpy as np
 import warnings
 import pylidc as pl
 from tqdm import tqdm
-from statistics import median_high, median, median_grouped, mode, mean
+from statistics import median_high, median, mode, mean
 from math import e, floor
 import random
 
-from utils import is_dir_path,segment_lung
-from pylidc.utils import consensus
-from PIL import Image
+from utils import is_dir_path
 
 warnings.filterwarnings(action='ignore')
 
@@ -24,35 +19,17 @@ parser.read('lung.conf')
 
 #Get Directory setting
 DICOM_DIR = is_dir_path(parser.get('prepare_dataset','LIDC_DICOM_PATH'))
-MASK_DIR = is_dir_path(parser.get('prepare_dataset','MASK_PATH'))
-IMAGE_DIR = is_dir_path(parser.get('prepare_dataset','IMAGE_PATH'))
-CLEAN_DIR_IMAGE = is_dir_path(parser.get('prepare_dataset','CLEAN_PATH_IMAGE'))
-CLEAN_DIR_MASK = is_dir_path(parser.get('prepare_dataset','CLEAN_PATH_MASK'))
 META_DIR = is_dir_path(parser.get('prepare_dataset','META_PATH'))
-
-#Hyper Parameter setting for prepare dataset function
-mask_threshold = parser.getint('prepare_dataset','Mask_Threshold')
-
-#Hyper Parameter setting for pylidc
-confidence_level = parser.getfloat('pylidc','confidence_level')
-padding = parser.getint('pylidc','padding_size')
 
 #Train-test split
 SPLIT_NUMBER = 2 / 3
 
 
 class MakeDataSet:
-    def __init__(self, LIDC_Patients_list, IMAGE_DIR, MASK_DIR,CLEAN_DIR_IMAGE,CLEAN_DIR_MASK,META_DIR, mask_threshold, padding, confidence_level=0.5):
+    def __init__(self, LIDC_Patients_list, META_DIR):
         self.IDRI_list = LIDC_Patients_list
-        self.img_path = IMAGE_DIR
-        self.mask_path = MASK_DIR
-        self.clean_path_img = CLEAN_DIR_IMAGE
-        self.clean_path_mask = CLEAN_DIR_MASK
         self.meta_path = META_DIR
-        self.mask_threshold = mask_threshold
-        self.c_level = confidence_level
-        self.padding = [(padding,padding),(padding,padding),(0,0)]
-        empty_annotatation_df = pd.DataFrame(index=[],columns=['Patient_id','Nodule_no', 'Annotation_no',
+        empty_annotatation_df = pd.DataFrame(index=[],columns=['Patient_id','Nodule_no', 'Nodule_id', 'Annotation_no',
                                                               'Internal structure', 'Calcification', 'Subtlety',
                                                               'Margin', 'Sphericity', 'Lobulation', 'Spiculation',
                                                               'Texture', 'Internal structure_entropy','Calcification_entropy',
@@ -79,11 +56,12 @@ class MakeDataSet:
         self.meta_annotation_train = empty_annotatation_df
         self.meta_annotation_test = empty_annotatation_df
 
-        self.meta_nodule = pd.DataFrame(index=[],columns=['Patient_id','Nodule_no', 'Internal structure',
-                                                          'Calcification', 'Subtlety', 'Margin', 'Sphericity',
-                                                          'Lobulation', 'Spiculation', 'Texture'])
+        empty_nodule_df = pd.DataFrame(index=[],columns=['Patient_id','Nodule_no', 'Nodule_id', 'Is_cancer'])
+        self.meta_nodule_train = empty_nodule_df
+        self.meta_nodule_test = empty_nodule_df
 
         self.IDRI_list_train, self.IDRI_list_test = self.get_train_test_split(size = len(self.IDRI_list))
+
 
 
     def create_response(self, malignancy_df, nrow):
@@ -103,16 +81,25 @@ class MakeDataSet:
         return is_cancer_column
 
 
+    # Input:
     def get_train_test_split(self, size, split = SPLIT_NUMBER):
-        print("Number of patients: " + str(size))
         random.seed(42)
         indeces = list(range(0,size - 1))
         train_indeces = random.sample(indeces, floor(split * size))
         test_indeces = [index for index in indeces if index not in train_indeces]
         IDRI_list_train = [self.IDRI_list[i] for i in train_indeces]
         IDRI_list_test = [self.IDRI_list[i] for i in test_indeces]
-        print("Training patient ids: " + str(IDRI_list_train))
+        patient_id_train_test_df = pd.DataFrame(index=[], columns=['Patient_id','In_train'])
+        for index in indeces:
+            if index in train_indeces:
+                in_train = 1
+            else:
+                in_train = 0
+            curr_row = [self.IDRI_list[index], in_train]
+            curr_row_df = pd.Series(data=curr_row, index=['Patient_id','In_train'])
+            patient_id_train_test_df = patient_id_train_test_df.append(curr_row_df, ignore_index = True)
 
+        patient_id_train_test_df.to_csv(self.meta_path+'patient_id_train_list.csv',index=False)
         return IDRI_list_train, IDRI_list_test
 
     def calculate_variable_mode(self, values, nrow):
@@ -206,11 +193,14 @@ class MakeDataSet:
         return meta_annotation_df
 
     def save_meta(self, meta_df, is_nodule, is_train):
-        if is_nodule:
-            self.meta_nodule = self.meta_nodule.append(meta_df,ignore_index=True)
-        else:
-            if is_train:
+        if is_train:
+            if is_nodule:
+                self.meta_nodule_train = self.meta_nodule_train.append(meta_df,ignore_index=True)
+            else:
                 self.meta_annotation_train = self.meta_annotation_train.append(meta_df, ignore_index=True)
+        else:
+            if is_nodule:
+                self.meta_nodule_test = self.meta_nodule_test.append(meta_df,ignore_index=True)
             else:
                 self.meta_annotation_test = self.meta_annotation_test.append(meta_df, ignore_index=True)
 
@@ -219,21 +209,10 @@ class MakeDataSet:
         prefix = [str(x).zfill(3) for x in range(1000)]
 
         # Make directory
-        if not os.path.exists(self.img_path):
-            os.makedirs(self.img_path)
-        if not os.path.exists(self.mask_path):
-            os.makedirs(self.mask_path)
-        if not os.path.exists(self.clean_path_img):
-            os.makedirs(self.clean_path_img)
-        if not os.path.exists(self.clean_path_mask):
-            os.makedirs(self.clean_path_mask)
         if not os.path.exists(self.meta_path):
             os.makedirs(self.meta_path)
 
-        IMAGE_DIR = Path(self.img_path)
-        MASK_DIR = Path(self.mask_path)
-        CLEAN_DIR_IMAGE = Path(self.clean_path_img)
-        CLEAN_DIR_MASK = Path(self.clean_path_mask)
+        nodule_id = 0
 
         for patient in tqdm(self.IDRI_list):
             pid = patient #LIDC-IDRI-0001~
@@ -245,39 +224,46 @@ class MakeDataSet:
             if len(nodules_annotation) > 0:
                 # Patients with nodules
                 for nodule_idx, nodule in enumerate(nodules_annotation):
+                    nodule_id += 1
                     tmp_nodule = []
                     tmp_annotations = []
 
                     annotation_number = 0
 
+                    tmp_nodule_df = pd.DataFrame(data=[], columns=['Patient_id','Nodule_no', 'Nodule_id', 'Is_cancer'])
+
                     for ann in nodule:
                         annotation_number += 1
 
-                        meta_annotation_list = [patient_id_dataset, nodule_idx + 1, annotation_number,
+                        meta_annotation_list = [patient_id_dataset, nodule_idx + 1, nodule_id, annotation_number,
                                                 ann.internalStructure, ann.calcification, ann.subtlety, ann.margin,
                                                 ann.sphericity, ann.lobulation, ann.spiculation, ann.texture, ann.malignancy]
 
                         # Remove annotation number as feature in nodule dataset
-                        curr_nodule_list = meta_annotation_list[:2] + meta_annotation_list[3:]
+                        curr_nodule_list = meta_annotation_list[:3] + meta_annotation_list[4:]
                         tmp_nodule.append(curr_nodule_list)
                         tmp_annotations.append(meta_annotation_list)
 
-                    tmp_nodule_df = pd.DataFrame(data=tmp_nodule, columns=['Patient_id','Nodule_no', 'Internal structure','Calcification',
-                                                                 'Subtlety', 'Margin', 'Sphericity', 'Lobulation',
-                                                                 'Spiculation', 'Texture', 'Malignancy'])
-
-                    tmp_annotations_df = pd.DataFrame(data=tmp_annotations, columns=['Patient_id','Nodule_no', "Annotation_no",
+                    tmp_annotations_df = pd.DataFrame(data=tmp_annotations, columns=['Patient_id','Nodule_no',
+                                                                                     'Nodule_id', "Annotation_no",
                                                                                      'Internal structure','Calcification',
                                                                                      'Subtlety', 'Margin', 'Sphericity', 'Lobulation',
                                                                                      'Spiculation', 'Texture', 'Malignancy'])
 
                     if not tmp_annotations_df.empty:
                         meta_annotation_df = self.calculate_summary_statistics(tmp_annotations_df)
+                        tmp_nodule_df = meta_annotation_df[['Patient_id','Nodule_no',
+                                                            'Nodule_id', 'Is_cancer']].iloc[0]
+
                         if patient in self.IDRI_list_train:
                             self.save_meta(meta_annotation_df, is_nodule=False, is_train=True)
                         else:
                             self.save_meta(meta_annotation_df, is_nodule=False, is_train=False)
 
+                    if patient in self.IDRI_list_train:
+                        self.save_meta(tmp_nodule_df, is_nodule=True, is_train=True)
+                    else:
+                        self.save_meta(tmp_nodule_df, is_nodule=True, is_train=False)
                     # if not tmp_nodule_df.empty:
                     #     meta_nodule_list = self.calculate_summary_statistics(tmp_nodule_df)
                     #     meta_nodule_df = pd.DataFrame(data=meta_nodule_list, columns=['Patient_id','Nodule_no', 'Internal structure','Calcification',
@@ -288,6 +274,8 @@ class MakeDataSet:
         print("Saved Meta data")
         self.meta_annotation_train.to_csv(self.meta_path+'meta_annotation_info_train.csv',index=False)
         self.meta_annotation_test.to_csv(self.meta_path+'meta_annotation_info_test.csv',index=False)
+        self.meta_nodule_train.to_csv(self.meta_path+'meta_nodule_info_train.csv',index=False)
+        self.meta_nodule_test.to_csv(self.meta_path+'meta_nodule_info_test.csv',index=False)
         # self.meta_nodule.to_csv(self.meta_path+'meta_nodule_info.csv',index=False)
 
 
@@ -298,5 +286,5 @@ if __name__ == '__main__':
     LIDC_IDRI_list.sort()
     LIDC_IDRI_list = LIDC_IDRI_list[1: len(LIDC_IDRI_list)]
 
-    test = MakeDataSet(LIDC_IDRI_list,IMAGE_DIR,MASK_DIR,CLEAN_DIR_IMAGE,CLEAN_DIR_MASK,META_DIR,mask_threshold,padding,confidence_level)
+    test = MakeDataSet(LIDC_IDRI_list,META_DIR)
     test.prepare_dataset()

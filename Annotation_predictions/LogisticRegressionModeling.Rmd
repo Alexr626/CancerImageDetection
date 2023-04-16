@@ -1,0 +1,273 @@
+---
+title: "Multinomial logistic regression modeling"
+author: "Ngoc Bui and Alexander Romanus"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+
+```{r load and clean data, warning=FALSE, message=FALSE}
+library(caret)
+library(pROC)
+library(dplyr)
+
+train <- read.csv("../Data/Meta/meta_annotation_info_train.csv", header = TRUE)
+test <- read.csv("../Data/Meta/meta_annotation_info_test.csv", header = TRUE)
+
+# eliminate all columns that have to do with Malignancy and the response var
+
+non_train_columns = c("Patient_id", "Nodule_no", "Nodule_id", "Annotation_no", "Malignancy_median", "Malignancy_median_high", "Malignancy_entropy",
+                      "Malignancy_mode", "Malignancy_mean", "Malignancy")
+
+train_filter <- train[!(names(train) %in% non_train_columns)]
+
+test_filter <- test[!(names(test) %in% non_train_columns)]
+
+```
+
+
+
+```{r create-modeling-weights, warning=FALSE, message=FALSE}
+ntrain = nrow(train_filter)
+
+nvec = c(table(train_filter$Is_cancer))
+wt = rep(1,ntrain)
+wt[train_filter$Is_cancer=="Ambiguous"] = (ntrain/4)/nvec[1]
+wt[train_filter$Is_cancer=="False"] = (ntrain/4)/nvec[2]
+wt[train_filter$Is_cancer=="No_consensus"] = (ntrain/4)/nvec[3]
+wt[train_filter$Is_cancer=="True"] = (ntrain/4)/nvec[4]
+print(sum(wt)) # same as training set sample size
+print(nvec/ntrain)
+table(wt)
+```
+```{r fit-full-model, warning=FALSE, message=FALSE, include=FALSE}
+set.seed(42)
+fullLogit = vglm(Is_cancer~ ., multinomial(), weights=wt, data=train_filter)
+print(summary(fullLogit))
+logitFull_pred = predict(fullLogit, type="response", weights=wt, newdata=test_filter)
+```
+
+
+
+```{r fit-model-selected-variables, warning=FALSE, message=FALSE}
+rf_cols = c("Subtlety_mean", "Calcification_mode", "Spiculation_mean", 
+"Subtlety_entropy", "Sphericity_mean", "Margin_mean", "Sphericity_entropy", 
+"Lobulation_mean", "Lobulation_entropy", "Margin_entropy", "Subtlety_median", 
+"Calcification", "Spiculation_entropy", "Subtlety_mode", "Texture_mean", 
+"Lobulation_median", "Sphericity_median", "Margin_median", "Texture_entropy", 
+"Spiculation_median", "Subtlety_median_high")
+
+set.seed(42)
+RFformula = paste("Is_cancer ~ ",paste(rf_cols, collapse="+"),sep = "")
+logitRF = vglm(as.formula(RFformula), multinomial(), weights=wt, data=train_filter)
+print(summary(logitRF))
+
+logitRF_pred = predictvglm(logitRF, type="response", weights=wt, newdata=test_filter)
+```
+
+```{r load and clean data 2, warning=FALSE, message=FALSE}
+# i1A = (train_filter$Calcification==1 & train_filter$Is_cancer=='Ambiguous')
+# i2A = (train_filter$Calcification==2 & train_filter$Is_cancer=='Ambiguous')
+# i3A = (train_filter$Calcification==3 & train_filter$Is_cancer=='Ambiguous')
+# i4A = (train_filter$Calcification==4 & train_filter$Is_cancer=='Ambiguous')
+# i5A = (train_filter$Calcification==5 & train_filter$Is_cancer=='Ambiguous')
+# i6A = (train_filter$Calcification==6 & train_filter$Is_cancer=='Ambiguous')
+# 
+# i1F = (train_filter$Calcification==1 & train_filter$Is_cancer=='False')
+# i2F = (train_filter$Calcification==2 & train_filter$Is_cancer=='False')
+# i3F = (train_filter$Calcification==3 & train_filter$Is_cancer=='False')
+# i4F = (train_filter$Calcification==4 & train_filter$Is_cancer=='False')
+# i5F = (train_filter$Calcification==5 & train_filter$Is_cancer=='False')
+# i6F = (train_filter$Calcification==6 & train_filter$Is_cancer=='False')
+# 
+# i1N = (train_filter$Calcification==1 & train_filter$Is_cancer=='No_consensus')
+# i2N = (train_filter$Calcification==2 & train_filter$Is_cancer=='No_consensus')
+# i3N = (train_filter$Calcification==3 & train_filter$Is_cancer=='No_consensus')
+# i4N = (train_filter$Calcification==4 & train_filter$Is_cancer=='No_consensus')
+# i5N = (train_filter$Calcification==5 & train_filter$Is_cancer=='No_consensus')
+# i6N = (train_filter$Calcification==6 & train_filter$Is_cancer=='No_consensus')
+# 
+# i1T = (train_filter$Calcification==1 & train_filter$Is_cancer=='True')
+# i2T = (train_filter$Calcification==2 & train_filter$Is_cancer=='True')
+# i3T = (train_filter$Calcification==3 & train_filter$Is_cancer=='True')
+# i4T = (train_filter$Calcification==4 & train_filter$Is_cancer=='True')
+# i5T = (train_filter$Calcification==5 & train_filter$Is_cancer=='True')
+# i6T = (train_filter$Calcification==6 & train_filter$Is_cancer=='True')
+# 
+# 
+# i1 = (train_filter$Calcification==1)
+# i2 = (train_filter$Calcification==2)
+# i3 = (train_filter$Calcification==3)
+# i4 = (train_filter$Calcification==4)
+# i5 = (train_filter$Calcification==5)
+# i6 = (train_filter$Calcification==6)
+# 
+# 
+# print(names(test_filter))
+
+
+```
+
+
+
+```{r get-prediction-intervals, warning=FALSE}
+# Calculates prediction intervals of each nodules in the dataset
+# Inputs:
+#   ProbMatrix: Each row is a probability vector of each response class for a given annotation
+#   Labels: vector of names of response classes (in same order as columns of the ProbMatrix)
+# Return:
+#   pred50 has 50% prediction intervals
+#   pred80 has 80% prediction intervals
+
+CategoryPredIntervalNodules = function(ProbMatrix, labels) { 
+  test_annotation <- read.csv("../Data/Meta/meta_annotation_info_test.csv", header = TRUE)
+
+  nannotations = nrow(ProbMatrix)
+  nodule_id = test_annotation$Nodule_id
+  n_nodules = length(unique(nodule_id))
+  pred50 = rep(NA,n_nodules); pred80 = rep(NA,n_nodules)
+
+  nodule_count = 1
+  c = 1
+  num_annotations = 0
+  psum = 0
+  curr_nodule_id = nodule_id[1]
+  for(i in 1:nannotations){
+    if (i != nannotations) {
+      c = c + 1
+      curr_nodule_id = nodule_id[c]
+      num_annotations = num_annotations + 1
+      psum = psum + ProbMatrix[i,]
+    }
+    if (nodule_id[i] != curr_nodule_id) {
+      psum_avg = psum / num_annotations
+
+      ip = order(psum_avg,decreasing=T)
+      pOrdered = psum_avg[ip] # decreasing order
+      labelsOrdered = labels[ip] # decreasing order
+      G = cumsum(pOrdered) # cumulative sum from largest
+      k1 = min(which(G>=0.5)) # level1= 0.5
+      k2 = min(which(G>=0.8)) # level2= 0.8
+      pred1 = labelsOrdered[1:k1]; pred2 = labelsOrdered[1:k2]
+      pred50[nodule_count] = paste(pred1,collapse="")
+      pred80[nodule_count] = paste(pred2,collapse="") 
+      
+      psum = 0
+      num_annotations = 0
+      nodule_count = nodule_count + 1
+    }
+  }
+  list(pred50=pred50, pred80=pred80)
+}
+predintLogitFull = CategoryPredIntervalNodules(logitFull_pred, labels=c("Ambiguous","False","No_consensus", "True"))
+predintLogitRF = CategoryPredIntervalNodules(logitRF_pred, labels=c("Ambiguous","False","No_consensus", "True"))
+```
+
+```{r get-coverage-rate-overall, warning=FALSE}
+# Input:
+#   pred_intervals: Object that contains both lists (pred50 and pred80) outputted by CategoryPredIntervalNodules()
+# Output:
+#   A list containing the coverage rate
+
+getOverallCoverageRateNodule = function(pred_intervals, level) {
+  test_nodule <- read.csv("../Data/Meta/meta_nodule_info_test.csv", header = TRUE)
+  observed = test_nodule[c("Is_cancer")]
+
+  if (level == 50) {
+    pred_intervals_confidence = pred_intervals$pred50
+  } else {
+    pred_intervals_confidence = pred_intervals$pred80
+  }
+
+  n = length(pred_intervals_confidence)
+
+
+  coverage_rate = 0
+  for (i in 1:(n-1)){
+    if(grepl(observed[i, ], pred_intervals_confidence[i], fixed=TRUE)) {
+      coverage_rate = coverage_rate + 1
+    }
+  }
+  coverage_rate = coverage_rate / n
+  list(coverage_rate)
+}
+
+coverage_rate_overall_full_50 = getOverallCoverageRateNodule(predintLogitFull, 50)
+coverage_rate_overall_rf_50 = getOverallCoverageRateNodule(predintLogitRF, 50)
+
+coverage_rate_overall_full_80 = getOverallCoverageRateNodule(predintLogitFull, 80)
+coverage_rate_overall_rf_80 = getOverallCoverageRateNodule(predintLogitRF, 80)
+
+print(coverage_rate_overall_full_50)
+print(coverage_rate_overall_rf_50)
+print(coverage_rate_overall_full_80)
+print(coverage_rate_overall_rf_80)
+```
+
+
+
+
+```{r get-coverage-rate-class-nodule, warning=FALSE}
+# Input:
+#   pred_intervals: One of the two objects (pred50 or pred80) outputted by CategoryPredIntervalNodules()
+# Output:
+#   A list containing the coverage rates of each class in the order: true, false, ambiguous, no consensus
+
+getCoverageRateByClassNodule = function(pred_intervals, level) {
+  test_nodule <- read.csv("../Data/Meta/meta_nodule_info_test.csv", header = TRUE)
+  observed = test_nodule$Is_cancer
+  observed = as.character(observed)
+  
+  n = nrow(test_nodule)
+  n_true = nrow(subset(test_nodule, Is_cancer == "True"))
+  n_false = nrow(subset(test_nodule, Is_cancer == "False"))
+  n_ambiguous = nrow(subset(test_nodule, Is_cancer == "Ambiguous"))
+  n_no_consensus = nrow(subset(test_nodule, Is_cancer == "No_consensus"))
+  
+  if (level == 50) {
+    pred_intervals_confidence = pred_intervals$pred50
+  } else {
+    pred_intervals_confidence = pred_intervals$pred80
+  }
+  
+  coverage_rate_true = 0
+  coverage_rate_false = 0
+  coverage_rate_ambiguous = 0
+  coverage_rate_no_consensus = 0
+  
+  for (i in 1:n) {
+    if(!grepl(observed[i], pred_intervals_confidence[i], fixed=TRUE)){
+      next
+    }
+    if(observed[i] == "True") {
+      coverage_rate_true = coverage_rate_true + 1
+    } else if(observed[i] == "False") {
+      coverage_rate_false = coverage_rate_false + 1
+    } else if(observed[i] == "Ambiguous") {
+      coverage_rate_ambiguous = coverage_rate_ambiguous + 1
+    } else {
+      coverage_rate_no_consensus = coverage_rate_no_consensus + 1
+    }
+  }
+  
+  coverage_rate_true = coverage_rate_true / n_true
+  coverage_rate_false = coverage_rate_false / n_false
+  coverage_rate_ambiguous = coverage_rate_ambiguous / n_ambiguous
+  coverage_rate_no_consensus = coverage_rate_no_consensus / n_no_consensus
+  
+  list(coverage_rate_true, coverage_rate_false, coverage_rate_ambiguous, coverage_rate_no_consensus)
+}
+
+coverage_rate_by_class_full_50 = getCoverageRateByClassNodule(predintLogitFull, 50)
+coverage_rate_by_class_rf_50 = getCoverageRateByClassNodule(predintLogitRF, 50)
+
+coverage_rate_by_class_full_80 = getCoverageRateByClassNodule(predintLogitFull, 80)
+coverage_rate_by_class_rf_80 = getCoverageRateByClassNodule(predintLogitRF, 80)
+
+print(coverage_rate_by_class_full_50)
+print(coverage_rate_by_class_rf_50)
+print(coverage_rate_by_class_full_80)
+print(coverage_rate_by_class_rf_80)
+
+```

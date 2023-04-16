@@ -7,7 +7,9 @@ import glob
 from sklearn.model_selection import StratifiedKFold
 
 np.random.seed(0)
-
+# Function to extract nodules from LIDC dataset
+# Input: None
+# Output: List of tuples containing (case, nodule, malignancy, diameter, malignancy_th, centroid)
 def extract_nodules():
     qu = pl.query(pl.Scan)
     im_size = 48
@@ -16,8 +18,6 @@ def extract_nodules():
     df = pd.read_csv('list3.2.csv', dtype={'case': str})
     train_patients = pd.read_csv('/Users/alex/dev/STAT 447B/Project/Data/Meta/patient_id_train_list.csv')
     train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
-
-    #curr_patient = train_patients["Patient_id"][0]
 
     nodules = []
     for _, row in df.iterrows():
@@ -81,8 +81,8 @@ def extract_nodules():
         nodules.append((case, view2d, malignancy, row['eq. diam.'], malignancy_th, ann.centroid))
 
     return nodules
-
-
+# Function go from LIDC fomrat to PNG
+# Input: Output directory
 def lidc2Png(out_dir):
     nodules = extract_nodules()
     f = open(out_dir + '/labels.csv', 'w')
@@ -92,6 +92,8 @@ def lidc2Png(out_dir):
         f.write(line)
     f.close()
 
+# Fucntion to go from LIDC format to NPY
+# Input: Output directory
 
 def Lidc2Voxel(out_dir):
     nodules = extract_nodules()
@@ -109,7 +111,8 @@ def Lidc2Voxel(out_dir):
         f.write(line)
     f.close()
 
-
+# Create CrossValidation Folds
+# Input: Labels, number of folds
 def get_kfold(labels, k):
     stFold = StratifiedKFold(k, True)
     folds = [0]*len(labels)
@@ -118,7 +121,8 @@ def get_kfold(labels, k):
             folds[item] = i
     return folds
 
-
+# Get any file from a directory
+# Input: Path to directory
 def get_any_file(path):
     files = glob.glob(path + "/*.dcm")
     if len(files) < 1:

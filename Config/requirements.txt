@@ -3,3 +3,8 @@ pylidc==0.2.3
 tqdm==4.65.0
 numpy==1.23.5
 pandas==1.5.3
+wandb==0.14.2
+dicom==0.9.9.post1
+torch==1.12.1
+torchvision==0.15.1
+xgboost==1.7.3
