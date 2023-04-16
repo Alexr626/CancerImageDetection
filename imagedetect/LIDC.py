@@ -19,8 +19,6 @@ def extract_nodules():
     train_patients = pd.read_csv('/Users/alex/dev/STAT 447B/Project/Data/Meta/patient_id_train_list.csv')
     train_patients["Patient_id_shortened"] = train_patients["Patient_id"].str[-4:]
 
-    #curr_patient = train_patients["Patient_id"][0]
-
     nodules = []
     for _, row in df.iterrows():
         # if row['eq. diam.'] > 30: continue
