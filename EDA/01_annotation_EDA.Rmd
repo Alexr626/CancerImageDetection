@@ -1,0 +1,111 @@
+---
+title: "noduleEDA"
+author: "Alexander Romanus"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mlbench)
+library(dplyr)
+library(caret)
+library(Hmisc)
+library(corrplot)
+library(tidyverse)
+library(pracma)
+library(pROC)
+library(gridExtra)
+```
+
+``` {r get-train-data, include=FALSE}
+# Using patient and nodule ids from training dataset in nodule csv file to subset rows of annotation csv to prevent data leakage
+train <- read.csv("../Data/Meta/meta_annotation_info_train.csv", header = TRUE)
+test <- read.csv("../Data/Meta/meta_annotation_info_test.csv", header = TRUE)
+```
+
+``` {r covariates-annotation-EDA}
+# Purpose: EDA of the original nodule characteristics stratified by radiologist
+# Inputs: Training dataset
+# Outputs:
+#   Prints 4 stacked barplots of distributions of the original nodule characteristics of our dataset, where each barplot is the annotations made by a single radiologist
+#   1 image of barplots corresponds to 1 nodule characteristic
+
+annotationDataAnalysis <- function(train_set) {
+  annotation1 <- train_set %>% filter(Annotation_no == "1")
+  annotation2 <- train_set %>% filter(Annotation_no == "2")
+  annotation3 <- train_set %>% filter(Annotation_no == "3")
+  annotation4 <- train_set %>% filter(Annotation_no == "4")
+  
+  annotation1 <- annotation1 %>% select(Internal.structure, Calcification, Subtlety,	Margin,	Sphericity,	Lobulation,	Spiculation, Texture, Malignancy)
+  annotation2 <- annotation2 %>% select(Internal.structure, Calcification, Subtlety,	Margin,	Sphericity,	Lobulation,	Spiculation, Texture, Malignancy)
+  annotation3 <- annotation3 %>% select(Internal.structure, Calcification, Subtlety,	Margin,	Sphericity,	Lobulation,	Spiculation, Texture, Malignancy)
+  annotation4 <- annotation4 %>% select(Internal.structure, Calcification, Subtlety,	Margin,	Sphericity,	Lobulation,	Spiculation, Texture, Malignancy)
+  
+  categoricalColumns <- colnames(annotation1)
+  k <- length(annotation1)
+  
+  for(j in 1:k) {
+    options(repr.plot.width=4, repr.plot.height=5)
+    plot1 <- ggplot(annotation1, aes(x=as.factor(annotation1[, j]))) + geom_bar(fill = "red", position = position_dodge(preserve = "total")) + labs(x = colnames(annotation1[j])) + scale_x_discrete(drop=FALSE)
+    plot2 <- ggplot(annotation2, aes(x=as.factor(annotation2[, j]))) + geom_bar(fill = "blue", position = position_dodge(preserve = "total")) + labs(x = colnames(annotation2[j])) + scale_x_discrete(drop=FALSE)
+    plot3 <- ggplot(annotation3, aes(x=as.factor(annotation3[, j]))) + geom_bar(fill = "green", position = position_dodge(preserve = "total")) + labs(x = colnames(annotation3[j])) + scale_x_discrete(drop=FALSE)
+    plot4 <- ggplot(annotation4, aes(x=as.factor(annotation4[, j]))) + geom_bar(fill = "orange", position = position_dodge(preserve = "total")) + labs(x = colnames(annotation4[j])) + scale_x_discrete(drop=FALSE)
+    ggsave(filename = paste("Plots/", categoricalColumns[j], "_annotation_comparisons.png", sep=""), grid.arrange(plot1, plot2, plot3, plot4, nrow=4))
+  }
+}
+
+annotationDataAnalysis(train_set = train)
+```
+
+```{r predictors-distributions-by-response-value, fig.height=15, fig.width=15}
+# Purpose: EDA of each predictor (including those made from summary statistics) separated by categories of the response variable.
+# Inputs: 
+#   train_set: Training dataset
+#   
+# Outputs:
+#   Prints box and whisker plots of each predictor by response category
+
+non_train_cols = c("Patient_id", "Nodule_no", "Nodule_id", "Annotation_no", "Malignancy_median", "Malignancy_median_high", "Malignancy_entropy",
+                        "Malignancy_mode", "Malignancy_mean", "Malignancy")
+
+plotPredictorsByResponseCategories = function(train_set, non_train_columns) {
+  # eliminate all columns that have to do with Malignancy and the response var
+  
+  train_filter <- train[!(names(train_set) %in% non_train_columns)]
+  summary(train_filter)
+  varnames = names(train_filter)
+  par(mfrow=c(3,3))
+  for(j in c(1:8)){
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+    }
+  par(mfrow=c(3,3))
+  for(j in c(9:16)){
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+    }
+  par(mfrow=c(3,3))
+  for(j in c(17:24)){
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+    }
+  par(mfrow=c(3,3))
+  for(j in c(25:32)){
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j])
+    }
+  par(mfrow=c(3,3))
+  for(j in c(33:40)){
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+    }
+  par(mfrow=c(3,3))
+  for(j in c(41:48)){ 
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+  }
+  par(mfrow=c(3,3))
+  for(j in c(41:48)){ 
+    plot(factor(train_filter$Is_cancer),train_filter[,j],xlab="Is_cancer",ylab=varnames[j]) 
+  }
+}
+
+plotPredictorsByResponseCategories(train_set = train, non_train_columns = non_train_cols)
+```
+
+
