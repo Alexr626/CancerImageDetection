@@ -30,7 +30,7 @@ To view fitting and results of CNN, go to this link to run the relevant Google C
 
 ### Final report
 
-A link to the final report can be found (link [here](https://docs.google.com/document/d/1d2BtYcFcLvLh7Se-v5h06bRKAoc1yzDUQvo7Kx2jRPw/edit#heading=h.9ssys0ki4cjw))
+A link to the informal final report can be found (link [here](https://docs.google.com/document/d/1d2BtYcFcLvLh7Se-v5h06bRKAoc1yzDUQvo7Kx2jRPw/edit#heading=h.9ssys0ki4cjw))
 
 ## Note
 
