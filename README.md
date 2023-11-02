@@ -28,6 +28,10 @@ We used two methods to find cancer among the nodules:
 
 To view fitting and results of CNN, go to this link to run the relevant Google Colab file (takes about 10-15 minutes to train): https://colab.research.google.com/drive/1ZXjOXir2pCCJrp7tAIL_8tbW-2jt2OLw?usp=sharing
 
+### Final report
+
+A link to the final report can be found (link [here](https://docs.google.com/document/d/1d2BtYcFcLvLh7Se-v5h06bRKAoc1yzDUQvo7Kx2jRPw/edit#heading=h.9ssys0ki4cjw))
+
 ## Note
 
-All files not listed above and that are not numbered were used to create the datasets, both the annotation csvs and the tensor data used to train the vision model. They require the original dataset to run, which is 125 GBs of CT scan images and xml files. We did not include them for obvious reasons. Please refer to the Methods section of the report for a description of how the datasets used in this project were created.
+All files not listed above and that are not numbered were used to create the datasets, both the annotation csvs and the tensor data used to train the vision model. They require the original dataset to run, which is 125 GBs of CT scan images and xml files. We did not include them due to file sizes. Please refer to the Methods section of the report for a description of how the datasets used in this project were created.
